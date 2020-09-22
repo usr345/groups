@@ -1,0 +1,186 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper]{geometry}
+\geometry{verbose,tmargin=2cm,bmargin=2cm,lmargin=2cm,rmargin=2cm}
+\usepackage[T2A]{fontenc}
+\usepackage[english,russian]{babel}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath, amsthm, amssymb, amsfonts}
+\begin{document}
+
+Симметрия фигуры --- это преобразование фигуры саму в себя, сохраняющее расстояние между всеми её точками. Рассмотрим равносторонний треугольник, и одну из симметрий --- вращение вокруг его центра. Вращениям правильного треугольника соответствуют следующие подстановки:
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}{.2\textwidth}
+    \centering
+    \includegraphics{./images/triangle.pdf}
+  \end{minipage}
+  \begin{minipage}{.2\textwidth}
+    \centering
+    $
+    \left(\begin{array}{ccc}
+      A & B & C \\
+      A & B & C\\
+    \end{array}\right)
+    $
+
+    \hrulefill\\
+    e = 0
+  \end{minipage}
+  \;
+  \begin{minipage}{.2\textwidth}
+    \centering
+    $
+    \left(\begin{array}{ccc}
+      A & B & C \\
+      B & C & A\\
+    \end{array}\right)
+    $
+
+    \hrulefill\\
+    a = 1
+  \end{minipage}
+  \;
+  \begin{minipage}{.2\textwidth}
+    \centering
+    $
+    \left(\begin{array}{ccc}
+      A & B & C \\
+      C & A & B
+    \end{array}\right)
+    $
+
+    \hrulefill\\
+    b = 2
+  \end{minipage}
+\end{figure}
+
+Таблица умножения поворотов треугольника приведена ниже. Заметим, что она эквивалентна таблице умножения $\mathbb{Z}_3$.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{ |c|*{3}{c}| }
+    \hline
+    & e & a & b\\
+    \hline
+    e & e & a & b\\
+    a & a & b & e\\
+    b & b & e & a\\
+    \hline
+  \end{tabular}
+  $\Longleftrightarrow$
+  \begin{tabular}{ |c|*{3}{c}| }
+    \hline
+    & 0 & 1 & 2\\
+    \hline
+    0 & 0 & 1 & 2\\
+    1 & 1 & 2 & 0\\
+    2 & 2 & 0 & 1\\
+    \hline
+  \end{tabular}
+\end{table}
+
+Кроме вращения у равностороннего треугольника есть еще 3 симметрии: отражения относительно осей $l_1, l_2, l_3$.
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}{.5\textwidth}
+    \centering
+    \includegraphics{./images/triangle-line1.pdf}
+  \end{minipage}
+  \begin{minipage}{.2\textwidth}
+    \centering
+    $
+    \left(\begin{array}{ccc}
+      A & B & C \\
+      A & C & B\\
+    \end{array}\right)
+    $
+
+    \hrulefill\\
+    c
+  \end{minipage}
+\end{figure}
+\begin{figure}[H]
+  \centering
+  \begin{minipage}{.5\textwidth}
+    \centering
+    \includegraphics{./images/triangle-line2.pdf}
+  \end{minipage}
+  \begin{minipage}{.2\textwidth}
+    \centering
+    $
+    \left(\begin{array}{ccc}
+      A & B & C\\
+      C & B & A\\
+    \end{array}\right)
+    $
+
+    \hrulefill\\
+    d
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}{.5\textwidth}
+    \centering
+    \includegraphics{./images/triangle-line3.pdf}
+  \end{minipage}
+  \begin{minipage}{.2\textwidth}
+    \centering
+    $
+    \left(\begin{array}{ccc}
+      A & B & C\\
+      B & A & C\\
+    \end{array}\right)
+    $
+
+    \hrulefill\\
+    f
+  \end{minipage}
+\end{figure}
+
+Помпозиция преобразований будет соответствовать перемножению соответствующих подстановок. Составим программу для генерации таблицы умножения.
+
+\begin{center}
+Теорема 1
+\end{center}
+
+Доказать, что в произвольной группе $e^{-1} = e$.
+
+\begin{center}
+Доказательство
+\end{center}
+
+Аксиомы группы:
+
+\noindent
+$A_1: \forall a \in A, e \times a = a \times e = a$\\
+$A_2: \forall a \in A, \exists a^{-1} \in A, a \times a = a^{-1} \times a = e$
+
+Равенство $e^{-1} = e$ следует из последовательного применения, e к $A_2$ и $A_1$:
+
+$$
+e \times e^{-1} = e \implies e^{-1} = e
+\qed
+$$
+\begin{center}
+Теорема 2
+\end{center}
+Доказать, что $a^{-1} = (a^{-1})^{-1}$.
+
+\begin{center}
+Доказательство
+\end{center}
+
+Мы знаем, что $\forall a \in A, a \times a^{-1} = e$. Следовательно: $a^{-1} \times (a^{-1})^{-1} = e$. Домножим слева обе части равенства на a:
+$$
+a \times (a^{-1} \times (a^{-1})^{-1}) = a \times e \implies
+(a \times a^{-1}) \times (a^{-1})^{-1}) = a \implies
+e \times (a^{-1})^{-1}) = a
+\implies (a^{-1})^{-1} = a
+\qed
+$$
+\end{document}
