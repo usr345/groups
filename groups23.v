@@ -1,5 +1,6 @@
 Require Import Coq.Bool.Bool.
 Require Import Coq.Arith.PeanoNat.
+Require Import Omega.
 
 Class Group G : Type :=
 {
@@ -118,9 +119,11 @@ Definition Z3_op (x y: Z_3) : Z_3 :=
   let a := (x + y) mod 3 in
   Z3 a (mod_upper_bound_bool _ 3 three_ne_0).
 
-Lemma Z_3_inv_lemma (k: nat) : (3 + k) < 3 -> False.
+Lemma Z_3_inv_lemma (k: nat) : ((3 + k) <? 3 = true) -> False.
 Proof.
-  intro. inversion_clear H. inversion_clear H0. inversion_clear H. inversion_clear H0.
+  intro. induction k as [| k' IH].
+  - simpl in H. inversion H.
+  - rewrite Nat.add_succ_r in H. auto.
 Qed.
 
 Lemma void {t : Set} : False -> t.
@@ -136,10 +139,21 @@ Definition Z_3_inv (x : Z_3) : Z_3 :=
   | Z3 (S (S (S k))) pf => void (Z_3_inv_lemma k pf)
   end.
 
-Check Nat.divmod.
+
+(* n0 : nat *)
+(* proof0 : (n0 <? 3) = true *)
+(* Unable to unify "(n0 <? 3) = true" with *)
+(*     "(n0 mod 3 <? 3) = true". *)
+
+(* Print eq_refl. *)
+Check f_equal2.
+Lemma proof_irrel1: mod_upper_bound_bool 0 3 three_ne_0 = lt_0_3.
+
 Proposition Z3_left_id : forall x: Z_3, (Z3_op z3_0 x) = x.
 Proof.
-  intro. unfold Z3_op. destruct x. inversion proof0.
+  intro. unfold Z3_op. destruct x. destruct n0.
+  - simpl.
+  simpl.
   - rewrite H0. simpl. reflexivity.
   - apply Nat.le_succ_le_pred in H0. simpl in H0. inversion H0; simpl.
     + reflexivity.
