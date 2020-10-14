@@ -31,7 +31,7 @@ A1: while(perms[i] != '\0')
 
     /* Произвести поиск слева направо.
        Все элементы помечены? - конец
-     */
+    */
 
 A2: i = 0;
     char start;
@@ -65,7 +65,7 @@ A3: ++i;
     /* Продвигаться вправо, пока либо не достигнут конец строки
        либо найден элемент, равный current.
        Пометить его, перейти к A3.
-     */
+    */
 A4: while(perms[i] != '\0')
     {
         // взять элемент без учета помеченности
@@ -114,21 +114,35 @@ int main(void)
         offset += first_read;
         first_line[first_read - 1] = '\0';
 
+        // если буфер слишком мал
+        if (arg_size < first_read * 2 - 6)
+        {
+            arg_size = first_read * 2 - 6;
+            argument = realloc(argument, arg_size);
+        }
+        strcpy(argument, first_line + 2);
+        strcat(argument, first_line + 2);
+
+        char result[100] = "";
+        mult_perms(argument, result);
+        printf("%cx%c=%s\n", first_line[0], first_line[0], result);
+
         while ((read = getline(&line, &len, fp)) != -1)
         {
             /* printf("Retrieved line of length %zu:\n", read); */
             line[read-1] = '\0';
 
-            char result[100] = "";
             if (argument != NULL)
             {
-                strcpy(argument, first_line + 2);
-                strcat(argument, line + 2);
+                // если буфер слишком мал для копирования
                 if (arg_size < first_read - 3 + read - 3)
                 {
                     arg_size = first_read - 3 + read - 3;
                     argument = realloc(argument, arg_size);
                 }
+
+                strcpy(argument, first_line + 2);
+                strcat(argument, line + 2);
 
                 mult_perms(argument, result);
                 printf("%cx%c=%s\n", first_line[0], line[0], result);

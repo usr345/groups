@@ -134,6 +134,7 @@ Proof.
 Qed.
 
 (* № 23 - состоит из 2-х теорем *)
+(* (a_1 * (a_2 * a_3) * ... a_n * a) = a * (a_1 * a_2 * a_3 * ... * e) *)
 Proposition extra1 : forall (a: G) (lst: list G), fold_left mult lst a = mult a (fold_left mult lst e).
 Proof.
   intros a lst. revert a. induction lst as [| a' lst' IH].
@@ -153,6 +154,16 @@ Proposition aa_e_commutative : forall a b: G, (forall x : G, x * x = e) -> commu
 Proof.
   intros a b He. specialize (He a) as Ha. specialize (He b) as Hb. rewrite <- Hb in Ha. apply f_equal with (f := fun g:G => b * g * b) in Ha. repeat rewrite assoc in Ha. rewrite <- (assoc (b*a) a b) in Ha. rewrite <- (assoc (b*b) b b) in Ha. rewrite Hb in Ha. rewrite left_id in Ha.
   specialize (He (a*b)) as Hab. rewrite <- Hab in Ha. apply f_equal with (f := fun g:G => g * (inv (a*b))) in Ha. rewrite <- (assoc (b*a) (a*b) (inv (a*b))) in Ha. rewrite <- (assoc (a*b) (a*b) (inv (a*b))) in Ha. rewrite right_inv in Ha. repeat rewrite right_id in Ha. unfold commutes_with. symmetry in Ha. assumption.
+Qed.
+
+Lemma aa_e_commutative' : (forall x : G, x * x = e) -> (forall x : G, x = inv x).
+Proof.
+  intros. specialize (H x) as Hx. rewrite <- (left_inv x) in Hx. apply (right_cancel x (inv x) x) in Hx. assumption.
+Qed.
+
+Lemma aa_e_commutative'' : forall a b: G, (forall x : G, x * x = e) -> commutes_with a b.
+Proof.
+  intros. unfold commutes_with. rewrite (aa_e_commutative' H a) at 2. rewrite (aa_e_commutative' H b) at 2. rewrite <- inv_prod. rewrite <- (aa_e_commutative' H (a*b)). reflexivity.
 Qed.
 
 Fixpoint pow (a: G) (n: nat) {struct n} : G :=
@@ -181,3 +192,14 @@ Proposition a_pow_comm : forall (a: G) (n m: nat), commutes_with (pow a n) (pow 
 Proof.
   intros. unfold commutes_with. repeat rewrite a_pow_m_n. rewrite Nat.add_comm. reflexivity.
 Qed.
+
+(* Произведение всех элементов списка *)
+Fixpoint prod (lst : list G) :=
+  match lst with
+  | nil => e
+  | h :: t => h * (prod t)
+  end.
+
+Proposition concat : forall (lst1 lst2 : list G), prod lst1 * prod lst2 = prod (lst1 ++ lst2).
+Proof.
+  intros.
