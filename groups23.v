@@ -18,7 +18,6 @@ Class Eq A :=
 }.
 
 Notation "x =? y" := (eqb x y) (at level 70).
-Search "proof".
 
 Section Group_theorems.
 
@@ -71,28 +70,27 @@ Instance groupBool : Group bool :=
 Record Z_3 : Type := Z3
 {
   n :> nat;
-  proof : n < 3
+  proof : (Nat.ltb n 3) = true
 }.
 
 (* Определяем обитателей типа Z_3 *)
-
-Proposition lt_0_3 : 0 < 3.
+Proposition lt_0_3 : (0 <=? 3) = true.
 Proof.
-  repeat constructor.
+  simpl. reflexivity.
 Qed.
 
 Definition z3_0 : Z_3 := (Z3 0 lt_0_3).
 
-Proposition lt_1_3 : 1 < 3.
+Proposition lt_1_3 : (1 <=? 3) = true.
 Proof.
-  repeat constructor.
+  reflexivity.
 Qed.
 
 Definition z3_1 : Z_3 := (Z3 1 lt_1_3).
 
-Proposition lt_2_3 : 2 < 3.
+Proposition lt_2_3 : (2 <=? 3) = true.
 Proof.
-  repeat constructor.
+  reflexivity.
 Qed.
 
 Definition z3_2 : Z_3 := (Z3 2 lt_2_3).
@@ -103,19 +101,22 @@ Proof.
   intro. discriminate.
 Qed.
 
-
-
 (* Instance eqZ_3 : Eq Z_3 := *)
 (* { *)
 (*   eqb := fun (z1 z2 : Z_3) => *)
 (*            let (n1, prf1) *)
 (* }. *)
 
-Check (Nat.mod_upper_bound _ 3 three_ne_0).
+Lemma mod_upper_bound_bool : forall (a b : nat), (not (eq b O)) -> (Nat.ltb (a mod b) b) = true.
+Proof.
+  intros a b H. apply (Nat.mod_upper_bound a b) in H. case Nat.ltb_spec0.
+  - reflexivity.
+  - intros Hcontr. contradiction.
+Qed.
 
 Definition Z3_op (x y: Z_3) : Z_3 :=
   let a := (x + y) mod 3 in
-  Z3 a (Nat.mod_upper_bound _ 3 three_ne_0).
+  Z3 a (mod_upper_bound_bool _ 3 three_ne_0).
 
 Lemma Z_3_inv_lemma (k: nat) : (3 + k) < 3 -> False.
 Proof.
@@ -126,14 +127,6 @@ Lemma void {t : Set} : False -> t.
 Proof.
   intro. contradiction H.
 Qed.
-
-Instance eqZ3 : Eq Z_3 :=
-{
-    eqb := fun (b c : bool) =>
-       match b, c with
-
-       end
-}.
 
 Definition Z_3_inv (x : Z_3) : Z_3 :=
   match x with
