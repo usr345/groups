@@ -1,6 +1,6 @@
 Require Import Coq.Bool.Bool.
 Require Import Coq.Arith.PeanoNat.
-Require Import Omega.
+Require Import Coq.Logic.Eqdep_dec.
 
 Class Group G : Type :=
 {
@@ -71,25 +71,25 @@ Instance groupBool : Group bool :=
 Record Z_3 : Type := Z3
 {
   n :> nat;
-  proof : (Nat.ltb n 3) = true
+  proof : (n <? 3) = true
 }.
 
 (* Определяем обитателей типа Z_3 *)
-Proposition lt_0_3 : (0 <=? 3) = true.
+Proposition lt_0_3 : (0 <? 3) = true.
 Proof.
   simpl. reflexivity.
 Qed.
 
 Definition z3_0 : Z_3 := (Z3 0 lt_0_3).
 
-Proposition lt_1_3 : (1 <=? 3) = true.
+Proposition lt_1_3 : (1 <? 3) = true.
 Proof.
   reflexivity.
 Qed.
 
 Definition z3_1 : Z_3 := (Z3 1 lt_1_3).
 
-Proposition lt_2_3 : (2 <=? 3) = true.
+Proposition lt_2_3 : (2 <? 3) = true.
 Proof.
   reflexivity.
 Qed.
@@ -99,7 +99,7 @@ Definition z3_2 : Z_3 := (Z3 2 lt_2_3).
 
 Proposition three_ne_0 : 3 <> 0.
 Proof.
-  intro. discriminate.
+  discriminate.
 Qed.
 
 (* Instance eqZ_3 : Eq Z_3 := *)
@@ -108,7 +108,7 @@ Qed.
 (*            let (n1, prf1) *)
 (* }. *)
 
-Lemma mod_upper_bound_bool : forall (a b : nat), (not (eq b O)) -> (Nat.ltb (a mod b) b) = true.
+Lemma mod_upper_bound_bool : forall (a b : nat), b <> O -> (a mod b <? b) = true.
 Proof.
   intros a b H. apply (Nat.mod_upper_bound a b) in H. case Nat.ltb_spec0.
   - reflexivity.
@@ -145,22 +145,19 @@ Definition Z_3_inv (x : Z_3) : Z_3 :=
 (* Unable to unify "(n0 <? 3) = true" with *)
 (*     "(n0 mod 3 <? 3) = true". *)
 
-(* Print eq_refl. *)
-Check f_equal2.
-Lemma proof_irrel1: mod_upper_bound_bool 0 3 three_ne_0 = lt_0_3.
+(* From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat. *)
+Hint Resolve Z3_op z3_0 : Z3.
+
+Lemma Z3_eq n m p q : n = m -> Z3 n p = Z3 m q.
+Proof.
+  intros H. revert p q. rewrite H. clear H. intros. apply f_equal. apply UIP_dec. apply bool_dec.
+Qed.
 
 Proposition Z3_left_id : forall x: Z_3, (Z3_op z3_0 x) = x.
 Proof.
-  intro. unfold Z3_op. destruct x. destruct n0.
-  - simpl.
-  simpl.
-  - rewrite H0. simpl. reflexivity.
-  - apply Nat.le_succ_le_pred in H0. simpl in H0. inversion H0; simpl.
-    + reflexivity.
-    + rewrite Nat.le_0_r in H2. rewrite H2. simpl. reflexivity.
+  intro. unfold Z3_op. destruct x as [vx proof]. apply Z3_eq. unfold n, z3_0. rewrite plus_O_n. apply Nat.mod_small. apply Nat.ltb_lt in proof. assumption.
 Qed.
 
-Search (?a + ?b = ?b + ?a).
 Proposition Z3_left_inv : forall x: Z_3, Z3_op (Z_3_inv x) x = z3_0.
 Proof.
   intro. destruct x as [n prf]. destruct n.
