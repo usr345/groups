@@ -158,6 +158,26 @@ Proof.
   intros H. revert p q. rewrite H. clear H. intros. apply f_equal. apply UIP_dec. apply bool_dec.
 Qed.
 
+Proposition n_apply : forall (x : nat), n (nat_Z_3 x) = x mod 3.
+Proof.
+  intro. simpl. reflexivity.
+Qed.
+
+Proposition n_apply' : forall (x : nat) (prf: (x <? 3) = true), n (Z3 x prf) = x.
+Proof.
+  intros. simpl. reflexivity.
+Qed.
+
+Proposition Z_op_sum : forall (x y: nat), Z3_op x y = x + y.
+Proof.
+  intros. unfold Z3_op. apply Z3_eq. repeat rewrite (n_apply _). rewrite (Nat.add_mod x y 3 three_ne_0). reflexivity.
+Qed.
+
+Proposition Z_op_sum' : forall (x y: Z_3), Z3_op x y = (n x) + (n y).
+Proof.
+  intros. unfold Z3_op. apply Z3_eq. repeat rewrite (n_apply _). rewrite (Nat.add_mod x y 3 three_ne_0). reflexivity.
+Qed.
+
 Example Z_3_inv_0 : Z_3_inv z3_0 = z3_0.
 Proof.
   simpl. apply Z3_eq. reflexivity.
@@ -178,36 +198,13 @@ Proof.
   intro. unfold Z3_op. destruct x as [vx proof]. apply Z3_eq. unfold n, z3_0. rewrite plus_O_n. apply Nat.mod_small. apply Nat.ltb_lt in proof. assumption.
 Qed.
 
+(* Set Printing All. *)
+Search (lt ?a ?b).
 Proposition Z3_left_inv : forall x: Z_3, Z3_op (Z_3_inv x) x = z3_0.
 Proof.
-  intro. unfold Z3_op. destruct x as [vx prf]. unfold z3_0. apply Z3_eq. destruct vx as [| vx'].
+  intro. unfold Z3_op. unfold Z_3_inv. apply Z3_eq. destruct x as [vx proof]. repeat rewrite n_apply'. rewrite (Nat.add_mod_idemp_l _ _ _ three_ne_0). rewrite Nat.sub_add.
   - simpl. reflexivity.
-  - destruct vx'.
-    + simpl. reflexivity.
-    + destruct vx'.
-      * simpl. reflexivity.
-      * revert prf. rewrite <- Nat.add_1_l. rewrite <- (Nat.add_1_l (S vx')). rewrite <- (Nat.add_1_l vx'). repeat rewrite Nat.add_assoc. change (1+1+1) with 3. intro. pose proof (Z_3_inv_lemma vx' prf). exfalso. apply H.
-Qed.
-
-(* Nat.add_mod: *)
-(*   forall a b n : nat, *)
-(*     n <> 0 -> (a + b) mod n = (a mod n + b mod n) mod n *)
-
-(* Unset Printing Notations. *)
-(* Set Printing All. *)
-Proposition n_apply : forall (x : nat), n (nat_Z_3 x) = x mod 3.
-Proof.
-  intro. simpl. reflexivity.
-Qed.
-
-Proposition Z_op_sum : forall (x y: nat), Z3_op x y = x + y.
-Proof.
-  intros. unfold Z3_op. apply Z3_eq. repeat rewrite (n_apply _). rewrite (Nat.add_mod x y 3 three_ne_0). reflexivity.
-Qed.
-
-Proposition Z_op_sum' : forall (x y: Z_3), Z3_op x y = (n x) + (n y).
-Proof.
-  intros. unfold Z3_op. apply Z3_eq. repeat rewrite (n_apply _). rewrite (Nat.add_mod x y 3 three_ne_0). reflexivity.
+  - apply Nat.ltb_lt in proof. apply Nat.lt_le_incl. assumption.
 Qed.
 
 Proposition Z3_assoc : forall x y z: Z_3, Z3_op x (Z3_op y z) = Z3_op (Z3_op x y) z.
