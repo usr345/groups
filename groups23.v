@@ -198,8 +198,6 @@ Proof.
   intro. unfold Z3_op. destruct x as [vx proof]. apply Z3_eq. unfold n, z3_0. rewrite plus_O_n. apply Nat.mod_small. apply Nat.ltb_lt in proof. assumption.
 Qed.
 
-(* Set Printing All. *)
-Search (lt ?a ?b).
 Proposition Z3_left_inv : forall x: Z_3, Z3_op (Z_3_inv x) x = z3_0.
 Proof.
   intro. unfold Z3_op. unfold Z_3_inv. apply Z3_eq. destruct x as [vx proof]. repeat rewrite n_apply'. rewrite (Nat.add_mod_idemp_l _ _ _ three_ne_0). rewrite Nat.sub_add.
