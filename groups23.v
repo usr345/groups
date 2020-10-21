@@ -74,6 +74,8 @@ Record Z_3 : Type := Z3
   proof : (n <? 3) = true
 }.
 
+(* Nat.mod_upper_bound: forall a b : nat, b <> 0 -> a mod b < b *)
+
 (* Определяем обитателей типа Z_3 *)
 Proposition lt_0_3 : (0 <? 3) = true.
 Proof.
@@ -102,6 +104,12 @@ Proof.
   discriminate.
 Qed.
 
+Proposition mod_ne_0 : 3 <> 0.
+Proof.
+  discriminate.
+Qed.
+
+
 (* Instance eqZ_3 : Eq Z_3 := *)
 (* { *)
 (*   eqb := fun (z1 z2 : Z_3) => *)
@@ -114,6 +122,14 @@ Proof.
   - reflexivity.
   - intros Hcontr. contradiction.
 Qed.
+
+Check (mod_upper_bound_bool 2 3) three_ne_0.
+
+Definition nat_Z_3 (n: nat) : Z_3 :=
+  let a := n mod 3 in
+  (Z3 a ((mod_upper_bound_bool n 3) three_ne_0)).
+
+Coercion nat_Z_3: nat >-> Z_3.
 
 Definition Z3_op (x y: Z_3) : Z_3 :=
   let a := (x + y) mod 3 in
@@ -131,26 +147,30 @@ Proof.
   intro. contradiction H.
 Qed.
 
+Search (?n mod ?m < ?m ).
 Definition Z_3_inv (x : Z_3) : Z_3 :=
   match x with
-  | Z3 0 pf => Z3 0 pf
-  | Z3 1 pf => Z3 2 lt_2_3
-  | Z3 2 pf => Z3 1 lt_1_3
-  | Z3 (S (S (S k))) pf => void (Z_3_inv_lemma k pf)
+  | Z3 m pf => Z3 ((3 - m) mod 3) (mod_upper_bound_bool (3 - m) _ three_ne_0)
   end.
-
-
-(* n0 : nat *)
-(* proof0 : (n0 <? 3) = true *)
-(* Unable to unify "(n0 <? 3) = true" with *)
-(*     "(n0 mod 3 <? 3) = true". *)
-
-(* From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat. *)
-Hint Resolve Z3_op z3_0 : Z3.
 
 Lemma Z3_eq n m p q : n = m -> Z3 n p = Z3 m q.
 Proof.
   intros H. revert p q. rewrite H. clear H. intros. apply f_equal. apply UIP_dec. apply bool_dec.
+Qed.
+
+Example Z_3_inv_0 : Z_3_inv z3_0 = z3_0.
+Proof.
+  simpl. apply Z3_eq. reflexivity.
+Qed.
+
+Example Z_3_inv_1 : Z_3_inv z3_0 = z3_0.
+Proof.
+  simpl. apply Z3_eq. reflexivity.
+Qed.
+
+Example Z_3_inv_2 : Z_3_inv z3_2 = z3_1.
+Proof.
+  simpl. apply Z3_eq. reflexivity.
 Qed.
 
 Proposition Z3_left_id : forall x: Z_3, (Z3_op z3_0 x) = x.
@@ -160,23 +180,48 @@ Qed.
 
 Proposition Z3_left_inv : forall x: Z_3, Z3_op (Z_3_inv x) x = z3_0.
 Proof.
-  intro. destruct x as [n prf]. destruct n.
-  - simpl. unfold Z3_op. simpl. reflexivity.
-  - destruct n0.
-    + simpl. unfold Z3_op. simpl. reflexivity.
-    + destruct n0.
-      * simpl. unfold Z3_op. simpl. reflexivity.
-      * revert prf. rewrite (plus_n_O n0). repeat rewrite plus_n_Sm. rewrite Nat.add_comm. intro. exfalso. apply Z_3_inv_lemma in prf. apply prf.
+  intro. unfold Z3_op. destruct x as [vx prf]. unfold z3_0. apply Z3_eq. destruct vx as [| vx'].
+  - simpl. reflexivity.
+  - destruct vx'.
+    + simpl. reflexivity.
+    + destruct vx'.
+      * simpl. reflexivity.
+      * revert prf. rewrite <- Nat.add_1_l. rewrite <- (Nat.add_1_l (S vx')). rewrite <- (Nat.add_1_l vx'). repeat rewrite Nat.add_assoc. change (1+1+1) with 3. intro. pose proof (Z_3_inv_lemma vx' prf). exfalso. apply H.
+Qed.
+
+(* Nat.add_mod: *)
+(*   forall a b n : nat, *)
+(*     n <> 0 -> (a + b) mod n = (a mod n + b mod n) mod n *)
+
+(* Unset Printing Notations. *)
+(* Set Printing All. *)
+Proposition n_apply : forall (x : nat), n (nat_Z_3 x) = x mod 3.
+Proof.
+  intro. simpl. reflexivity.
+Qed.
+
+Proposition Z_op_sum : forall (x y: nat), Z3_op x y = x + y.
+Proof.
+  intros. unfold Z3_op. apply Z3_eq. repeat rewrite (n_apply _). rewrite (Nat.add_mod x y 3 three_ne_0). reflexivity.
+Qed.
+
+Proposition Z_op_sum' : forall (x y: Z_3), Z3_op x y = (n x) + (n y).
+Proof.
+  intros. unfold Z3_op. apply Z3_eq. repeat rewrite (n_apply _). rewrite (Nat.add_mod x y 3 three_ne_0). reflexivity.
 Qed.
 
 Proposition Z3_assoc : forall x y z: Z_3, Z3_op x (Z3_op y z) = Z3_op (Z3_op x y) z.
+Proof.
+  intros. repeat rewrite (Z_op_sum' _ _). repeat rewrite n_apply.
+  unfold nat_Z_3. apply Z3_eq. rewrite (Nat.add_mod_idemp_l _ _ _ three_ne_0). rewrite (Nat.add_mod_idemp_r _ _ _ three_ne_0). rewrite Nat.add_assoc. reflexivity.
+Qed.
 
-Instance groupZ3 : Group Z3 :=
+Instance groupZ3 : Group Z_3 :=
 {
   e := z3_0;
-  mult := z3_op;
+  mult := Z3_op;
   inv := Z_3_inv;
-  left_id := bool_left_id;
+  left_id := Z3_left_id;
   left_inv := Z3_left_inv;
-  assoc := xorb_assoc
+  assoc := Z3_assoc
 }.
