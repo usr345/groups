@@ -42,8 +42,6 @@ Record Z_k : Type := Zk
   proof : (n <? k) = true
 }.
 
-(* Nat.mod_upper_bound: forall a b : nat, b <> 0 -> a mod b < b *)
-
 (* Определяем обитателей типа Z_k *)
 Proposition lt_0_k : (0 <? k) = true.
 Proof.
@@ -122,36 +120,35 @@ Proof.
   intros. unfold Zk_op. apply Zk_eq. repeat rewrite (n_apply _). rewrite (Nat.add_mod x y k k_ne_0). reflexivity.
 Qed.
 
-Search (?k mod ?k).
 Lemma Z_k_inv_0 : Z_k_inv zk_0 = zk_0.
 Proof.
   unfold Z_k_inv. unfold zk_0. rewrite Nat.sub_0_r. apply Zk_eq. apply (Nat.mod_same k k_ne_0).
 Qed.
 
-Proposition Z3_left_id : forall x: Z_3, (Z3_op z3_0 x) = x.
+Proposition Zk_left_id : forall x: Z_k, (Zk_op zk_0 x) = x.
 Proof.
-  intro. unfold Z3_op. destruct x as [vx proof]. apply Z3_eq. unfold n, z3_0. rewrite plus_O_n. apply Nat.mod_small. apply Nat.ltb_lt in proof. assumption.
+  intro. unfold Zk_op. destruct x as [vx proof]. apply Zk_eq. unfold n, zk_0. rewrite plus_O_n. apply Nat.mod_small. apply Nat.ltb_lt in proof. assumption.
 Qed.
 
-Proposition Z3_left_inv : forall x: Z_3, Z3_op (Z_3_inv x) x = z3_0.
+Proposition Zk_left_inv : forall x: Z_k, Zk_op (Z_k_inv x) x = zk_0.
 Proof.
-  intro. unfold Z3_op. unfold Z_3_inv. apply Z3_eq. destruct x as [vx proof]. repeat rewrite n_apply'. rewrite (Nat.add_mod_idemp_l _ _ _ three_ne_0). rewrite Nat.sub_add.
-  - simpl. reflexivity.
-  - apply Nat.ltb_lt in proof. apply Nat.lt_le_incl. assumption.
+  intro. unfold Zk_op. unfold Z_k_inv. apply Zk_eq. destruct x as [vx proof]. repeat rewrite n_apply'. rewrite (Nat.add_mod_idemp_l _ _ _ k_ne_0). rewrite Nat.sub_add.
+  - apply (Nat.mod_same k k_ne_0).
+  - apply Nat.ltb_lt in proof. apply Nat.lt_le_incl. apply proof.
 Qed.
 
-Proposition Z3_assoc : forall x y z: Z_3, Z3_op x (Z3_op y z) = Z3_op (Z3_op x y) z.
+Proposition Zk_assoc : forall x y z: Z_k, Zk_op x (Zk_op y z) = Zk_op (Zk_op x y) z.
 Proof.
   intros. repeat rewrite (Z_op_sum' _ _). repeat rewrite n_apply.
-  unfold nat_Z_3. apply Z3_eq. rewrite (Nat.add_mod_idemp_l _ _ _ three_ne_0). rewrite (Nat.add_mod_idemp_r _ _ _ three_ne_0). rewrite Nat.add_assoc. reflexivity.
+  unfold nat_Z_k. apply Zk_eq. rewrite (Nat.add_mod_idemp_l _ _ _ k_ne_0). rewrite (Nat.add_mod_idemp_r _ _ _ k_ne_0). rewrite Nat.add_assoc. reflexivity.
 Qed.
 
-Instance groupZ3 : Group Z_3 :=
+Instance groupZk : Group Z_k :=
 {
-  e := z3_0;
-  mult := Z3_op;
-  inv := Z_3_inv;
-  left_id := Z3_left_id;
-  left_inv := Z3_left_inv;
-  assoc := Z3_assoc
+  e := zk_0;
+  mult := Zk_op;
+  inv := Z_k_inv;
+  left_id := Zk_left_id;
+  left_inv := Zk_left_inv;
+  assoc := Zk_assoc
 }.
