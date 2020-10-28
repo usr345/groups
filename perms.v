@@ -17,9 +17,24 @@ Proof.
   move=> a0 b0 v1 v2 H1 H2 IH. apply: (permutation_trans _ b0); done.
 Qed.
 
+Theorem perm_trans (A: Type) (a b c: seq A): l_perm a b -> l_perm b c -> l_perm a b.
+Proof.
+  elim; try by constructor.
+  move=> v1 v2 *. apply: (permutation_trans _ v2); done.
+Qed.
 
+Inductive In (A: Type) (x: A) : forall (s: seq A), Type :=
+| fst (t: seq A): In (x :: t)
+(* | n_fst (y: A) (t: seq A) (P: In x t) : In x (y::t) *)
+.
+
+Theorem perm_x_in (A: Type) (x: A)  (a b: seq A): List.In x a -> l_perm a b -> List.In x b.
+Proof.
+  elim.
 
 Record perm (n: nat) : Type := { l: list nat; p: l_perm (iota 0 n) l }.
+
+
 Definition mult
 
 perm1 := perm
