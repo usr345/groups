@@ -23,14 +23,25 @@ Proof.
   move=> v1 v2 *. apply: (permutation_trans _ v2); done.
 Qed.
 
-Inductive In (A: Type) (x: A) : forall (s: seq A), Type :=
-| fst (t: seq A): In (x :: t)
-(* | n_fst (y: A) (t: seq A) (P: In x t) : In x (y::t) *)
+Inductive In {A: Type} (x: A) : seq A -> Prop :=
+| fst (t: seq A): In x (x :: t)
+| n_fst (y: A) (t: seq A) (H: In x t) : In x (y::t)
 .
 
-Theorem perm_x_in (A: Type) (x: A)  (a b: seq A): List.In x a -> l_perm a b -> List.In x b.
+Theorem perm_x_in (A: Type) (x: A)  (a b: seq A): In x a -> l_perm a b -> In x b.
 Proof.
-  elim.
+  move=> H1 H2. move: H1. elim: H2.
+  - apply.
+  - move=> a0 v1 v2 H1 H2 H3. inversion H3. subst.
+    + apply (fst a0 v2).
+    + subst. apply n_fst. apply H2 in H0. apply H0.
+  - move=> a0 v1 v2 H1 H2 H3 H4. inversion H4.
+    + apply n_fst. apply fst.
+    + subst. inversion_clear H0.
+      * apply fst.
+      * apply n_fst. apply n_fst. apply (H3 H).
+  - move=> a0 v1 v2 H1 H2 H3 H4 H5. apply H4. apply H2. exact H5.
+Qed.
 
 Record perm (n: nat) : Type := { l: list nat; p: l_perm (iota 0 n) l }.
 
