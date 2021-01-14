@@ -92,6 +92,18 @@ Proof.
   intros x y z H. apply f_equal with (f := fun g:G => g * inv z) in H. repeat rewrite <- assoc in H. repeat rewrite right_inv in H. repeat rewrite right_id in H. assumption.
 Qed.
 
+(* № 19 Доказать, что для любого элемента a группы суще-
+ствует единственный обратный элемент inv a.
+ *)
+Proposition left_inv_unique: forall y: G, exists x: G, (x * y = e /\ forall x':G, x'*y = e -> x = x').
+Proof.
+  intros y. exists (inv y). split.
+  - apply left_inv.
+    (* left_cancel : forall x y z:G, *)
+    (* x * y = x * z -> y = z. *)
+  - intros x' H. rewrite <- (left_inv y) in H. apply right_cancel in H. rewrite H. reflexivity.
+Qed.
+
 Proposition commutator_e_impl_commutes : forall x y:G, [x, y] = e -> commutes_with x y.
 Proof.
   intros x y H. red. unfold commutator in H. rewrite <- right_inv with (x:=y) in H. apply f_equal with (f := fun g:G => g * y) in H. rewrite <- assoc in H. rewrite left_inv in H. rewrite right_id in H.  rewrite <- (assoc y _ _) in H. rewrite left_inv in H. rewrite <- right_inv with (x:=x) in H. apply f_equal with (f := fun g:G => g * x) in H. rewrite <- assoc in H. rewrite left_inv in H. rewrite right_id in H. rewrite assoc in H. rewrite <- (assoc _ x _) in H. rewrite right_inv in H. rewrite right_id in H. assumption.
@@ -172,8 +184,10 @@ Fixpoint pow (a: G) (n: nat) {struct n} : G :=
   | S n' => a * (pow a n')
   end.
 
+Notation "a ** b" := (pow a b) (at level 35, right associativity).
+
 (* № 27 *)
-Proposition a_pow_m_n : forall (a: G) (n m: nat), (pow a n)*(pow a m) = pow  a (n + m).
+Proposition a_pow_m_n : forall (a: G) (n m: nat), (pow a n)*(pow a m) = pow a (n + m).
 Proof.
   intros. induction n as [| n' IH] ; simpl.
   - rewrite left_id. reflexivity.
@@ -186,6 +200,20 @@ Proof.
   intros. apply right_cancel with (z := (pow a n)). rewrite left_inv. symmetry. induction n as [| n' IHn'].
   - simpl. apply left_id.
   - rewrite <- Nat.add_1_r at 1. rewrite <- (a_pow_m_n (inv a) n' 1). simpl. rewrite right_id. rewrite assoc. rewrite <- (assoc (pow (inv a) n') (inv a) a). rewrite left_inv. rewrite right_id. assumption.
+Qed.
+
+Proposition e_pow_n_eq_e : forall (n: nat), (pow e n) = e.
+Proof.
+  intros. induction n as [| n' IH] ; simpl; try reflexivity.
+  rewrite left_id. apply IH.
+Qed.
+
+(* № 28 *)
+Proposition theo_28 : forall (a: G) (n m: nat), (pow (pow a n) m) = pow a (n * m).
+Proof.
+  intros. induction m as [| m' IH] ; simpl.
+  - rewrite <- mult_n_O. simpl. reflexivity.
+  - rewrite IH. rewrite Nat.mul_succ_r. rewrite Nat.add_comm. rewrite <- a_pow_m_n. reflexivity.
 Qed.
 
 Proposition a_pow_comm : forall (a: G) (n m: nat), commutes_with (pow a n) (pow a m).
