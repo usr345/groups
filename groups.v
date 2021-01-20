@@ -1,7 +1,7 @@
 Require Import Coq.Setoids.Setoid.
 Require Import Coq.Lists.List.
 Require Import PeanoNat.
-
+Require Import ZArith.
 (* G - носитель группы *)
 Class Group G : Type :=
 {
@@ -247,4 +247,61 @@ Section Group_theorems.
   (* Proposition concat : forall (lst1 lst2 : list G), prod lst1 * prod lst2 = prod (lst1 ++ lst2). *)
   (* Proof. *)
   (*   intros. *)
+
+  Definition order a n :=
+    a ** n = e /\ (forall k, 0 < k < n -> a ** k <> e).
+
+  (* Set Printing All. *)
+  (* Proposition pow_i_neq_poq_j: *)
+  (*   forall i j a n, order a n ->  i < j < n -> *)
+  (*              pow a i <> pow a j. *)
+
+  (*   forall (i, j: nat) (a: G) (n: nat), order a n ->  i < j < n -> *)
+  (*              pow a i <> pow a j. *)
+  (*   Proof. *)
+  (*     intro. *)
+
+  Definition pow_z (a: G) (z: Z) : G :=
+    match z with
+    | Z0 => e
+    | Zpos x => pow a (Pos.to_nat x)
+    | Zneg x => inv (pow a (Pos.to_nat x))
+    end.
+
+  Search (Pos.to_nat (?a + ?b) = Pos.to_nat ?a + Pos.to_nat ?b).
+  (* Pos.to_nat *)
+  (* Pos2Nat.inj_add: forall p q : positive, Pos.to_nat (p + q) = Pos.to_nat p + Pos.to_nat q *)
+  (* Proposition lemma1 : forall () zpow a (Z.pos_sub p p0) = (pow a p) * inv (pow a p0). *)
+    (* Search Pos_to_nat. *)
+  (* Proposition a_pow_m_n : forall (a: G) (n m: nat), (pow a n)*(pow a m) = pow a (n + m). *)
+  Lemma pow_a_n_plus_1_pos : forall (a: G) (n: positive), pow_z a (Z.succ (Zpos n)) = a * pow_z a (Zpos n).
+  Proof.
+    intros a n. simpl. rewrite (Pos2Nat.inj_add n 1). rewrite Nat.add_comm. rewrite <- a_pow_m_n. simpl. rewrite right_id. reflexivity.
+  Qed.
+
+  Locate "-".
+  Search ((1 + _)%positive).
+  Search (Z.neg (_ + _)).
+  Lemma pow_a_n_plus_1_Z : forall (a: G) (n: Z), (pow_z a (Z.succ n)) = a * pow_z a n.
+  Proof.
+    intros a n. unfold Z.succ. unfold Z.add.
+    destruct n.
+    - simpl. reflexivity.
+    - apply pow_a_n_plus_1_pos.
+    - rewrite <- Pos2Z.add_pos_neg. induction p using Pos.peano_ind.
+      + simpl. rewrite right_id. rewrite right_inv. reflexivity.
+      + rewrite <- Pos.add_1_l. rewrite <- Pos2Z.add_neg_neg. rewrite Z.add_assoc. rewrite Z.add_opp_diag_r. rewrite Z.add_0_l. rewrite Pos2Z.add_neg_neg. unfold pow_z. rewrite Pos.add_comm. rewrite Pos2Nat.inj_add. simpl. rewrite <- a_pow_m_n. rewrite inv_prod. simpl. rewrite right_id. rewrite assoc. rewrite right_inv. rewrite left_id. reflexivity.
+  Qed.
+
+  Proposition a_pow_m_n_Z : forall (a: G) (n m: Z), (pow_z a n)*(pow_z a m) = pow_z a (n + m).
+  Proof.
+    intros. induction n using Z.peano_ind.
+    - simpl. apply left_id.
+    - unfold Z.succ.
+    induction n as [| n' IH | n' IH].
+    -
+    - simpl. destruct m.
+      + simpl. apply right_id.
+      +
+
 End Group_theorems.
