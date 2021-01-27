@@ -1,24 +1,35 @@
 Require Import Coq.Setoids.Setoid.
 Require Import Coq.Lists.List.
 Require Import PeanoNat.
-Require Import ZArith.
+
 (* G - носитель группы *)
-Class Group G : Type :=
+Class Semigroup G : Type :=
 {
-    e : G;
     mult : G -> G -> G;
-    inv : G -> G;
-    left_id : forall x:G, mult e x = x;
-    left_inv : forall x:G, mult (inv x) x = e;
     assoc : forall x y z:G,
         mult x (mult y z) = mult (mult x y) z
 }.
 
+Class Monoid G `{Hsemi: Semigroup G} : Type :=
+{
+  e : G;
+  left_id : forall x:G, mult e x = x;
+}.
+
+Class Group G `{Hmono: Monoid G} : Type :=
+{
+    inv : G -> G;
+    left_inv : forall x:G, mult (inv x) x = e;
+}.
+
+Declare Scope group_scope.
+Infix "*" := mult (at level 40, left associativity) : group_scope.
+Open Scope group_scope.
+
 Section Group_theorems.
 
-  Parameter G: Type.
+  Variable G: Type.
   Context `{Hgr: Group G}.
-  Infix "*" := mult (at level 40, left associativity).
 
   (* № 24 *)
   (* Вспомогательная лемма, нужна в дальнейшем *)
@@ -244,14 +255,12 @@ Section Group_theorems.
     | h :: t => h * (prod t)
     end.
 
-  (* Proposition concat : forall (lst1 lst2 : list G), prod lst1 * prod lst2 = prod (lst1 ++ lst2). *)
-  (* Proof. *)
-  (*   intros. *)
+  (* Pos.to_nat *)
+  (* Pos2Nat.inj_add: forall p q : positive, Pos.to_nat (p + q) = Pos.to_nat p + Pos.to_nat q *)
+  (* Proposition lemma1 : forall () zpow a (Z.pos_sub p p0) = (pow a p) * inv (pow a p0). *)
+    (* Search Pos_to_nat. *)
+  (* Proposition a_pow_m_n : forall (a: G) (n m: nat), (pow a n)*(pow a m) = pow a (n + m). *)
 
-  Definition order a n :=
-    a ** n = e /\ (forall k, 0 < k < n -> a ** k <> e).
-
-  (* Set Printing All. *)
   (* Proposition pow_i_neq_poq_j: *)
   (*   forall i j a n, order a n ->  i < j < n -> *)
   (*              pow a i <> pow a j. *)
@@ -260,53 +269,5 @@ Section Group_theorems.
   (*              pow a i <> pow a j. *)
   (*   Proof. *)
   (*     intro. *)
-
-  Definition pow_z (a: G) (z: Z) : G :=
-    match z with
-    | Z0 => e
-    | Zpos x => pow a (Pos.to_nat x)
-    | Zneg x => inv (pow a (Pos.to_nat x))
-    end.
-
-  Search (Pos.to_nat (?a + ?b) = Pos.to_nat ?a + Pos.to_nat ?b).
-  (* Pos.to_nat *)
-  (* Pos2Nat.inj_add: forall p q : positive, Pos.to_nat (p + q) = Pos.to_nat p + Pos.to_nat q *)
-  (* Proposition lemma1 : forall () zpow a (Z.pos_sub p p0) = (pow a p) * inv (pow a p0). *)
-    (* Search Pos_to_nat. *)
-  (* Proposition a_pow_m_n : forall (a: G) (n m: nat), (pow a n)*(pow a m) = pow a (n + m). *)
-  Locate "-".
-  Search ((1 + _)%positive).
-  Search (Z.neg (_ + _)).
-  Lemma pow_a_n_plus_1_Z : forall (a: G) (n: Z), (pow_z a (Z.succ n)) = a * pow_z a n.
-  Proof.
-    intros a n. unfold Z.succ. unfold Z.add.
-    destruct n.
-    - simpl. reflexivity.
-    - simpl. rewrite (Pos2Nat.inj_add p 1). rewrite Nat.add_comm. rewrite <- a_pow_m_n. simpl. rewrite right_id. reflexivity.
-    - rewrite <- Pos2Z.add_pos_neg. induction p using Pos.peano_ind.
-      + simpl. rewrite right_id. rewrite right_inv. reflexivity.
-      + rewrite <- Pos.add_1_l. rewrite <- Pos2Z.add_neg_neg. rewrite Z.add_assoc. rewrite Z.add_opp_diag_r. rewrite Z.add_0_l. rewrite Pos2Z.add_neg_neg. unfold pow_z. rewrite Pos.add_comm. rewrite Pos2Nat.inj_add. simpl. rewrite <- a_pow_m_n. rewrite inv_prod. simpl. rewrite right_id. rewrite assoc. rewrite right_inv. rewrite left_id. reflexivity.
-  Qed.
-
-  Search (Z.pos (Pos.succ _)).
-  Search Z.neg.
-  Lemma pow_a_n_minus_1_Z : forall (a: G) (n: Z), (pow_z a (Z.pred n)) = inv(a) * pow_z a n.
-  Proof.
-    intros a n. unfold Z.pred. unfold Z.add.
-    destruct n.
-    - simpl. repeat rewrite right_id. reflexivity.
-    - rewrite <- Pos2Z.add_pos_neg. induction p using Pos.peano_ind.
-      + simpl. rewrite right_id. rewrite left_inv. reflexivity.
-      + rewrite Pplus_one_succ_l. rewrite Pos.add_1_l. rewrite Pos2Z.inj_succ. rewrite pow_a_n_plus_1_Z. rewrite assoc. rewrite left_inv. rewrite left_id. rewrite <- Z.add_1_r. rewrite <- Z.add_assoc. rewrite Pos2Z.add_pos_neg. simpl (Z.pos_sub 1 1). rewrite Z.add_0_r. reflexivity.
-    - simpl. rewrite (Pos2Nat.inj_add p 1). rewrite <- a_pow_m_n. rewrite inv_prod. simpl (a ** Pos.to_nat 1). rewrite right_id. reflexivity.
-  Qed.
-
-  Proposition a_pow_m_n_Z : forall (a: G) (n m: Z), (pow_z a n)*(pow_z a m) = pow_z a (n + m).
-  Proof.
-    intros. induction n using Z.peano_ind.
-    - simpl. apply left_id.
-    - rewrite pow_a_n_plus_1_Z. rewrite <- assoc. rewrite IHn. rewrite <- pow_a_n_plus_1_Z. rewrite Z.add_succ_l. reflexivity.
-    - rewrite pow_a_n_minus_1_Z. rewrite <- assoc. rewrite IHn.
-      rewrite Z.add_pred_l. rewrite pow_a_n_minus_1_Z. reflexivity.
-  Qed.
 End Group_theorems.
+Close Scope group_scope.
