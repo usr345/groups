@@ -1,6 +1,6 @@
 Add LoadPath ".".
-Require Import groups.
-Require Import Coq.Bool.Bool.
+Require Export groups.
+Require Export Coq.Bool.Bool.
 Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Logic.Eqdep_dec.
 
@@ -20,14 +20,22 @@ Proof.
   intros. destruct x; destruct y; destruct z; simpl; reflexivity.
 Qed.
 
-Instance groupBool : Group bool :=
+Instance semigroupBool : Semigroup bool :=
+{
+    mult := xorb;
+    assoc := xorb_assoc
+}.
+
+Instance monoidBool : Monoid bool :=
 {
   e := false;
-  mult := xorb;
-  inv := (@id bool);
   left_id := bool_left_id;
+}.
+
+Instance groupBool : Group bool :=
+{
+  inv := (@id bool);
   left_inv := bool_left_inv;
-  assoc := xorb_assoc
 }.
 
 (* Реализация группы для Z_3 *)
@@ -166,14 +174,22 @@ Proof.
   unfold nat_Z_3. apply Z3_eq. rewrite (Nat.add_mod_idemp_l _ _ _ three_ne_0). rewrite (Nat.add_mod_idemp_r _ _ _ three_ne_0). rewrite Nat.add_assoc. reflexivity.
 Qed.
 
-Instance groupZ3 : Group Z_3 :=
+Instance semigroupZ3 : Semigroup Z_3 :=
+{
+  mult := Z3_op;
+  assoc := Z3_assoc
+}.
+
+Instance monoidZ3 : Monoid Z_3 :=
 {
   e := z3_0;
-  mult := Z3_op;
-  inv := Z_3_inv;
   left_id := Z3_left_id;
+}.
+
+Instance groupZ3 : Group Z_3 :=
+{
+  inv := Z_3_inv;
   left_inv := Z3_left_inv;
-  assoc := Z3_assoc
 }.
 
 End GroupZ_3.
@@ -287,13 +303,21 @@ Proof.
   unfold nat_Z_k. apply Zk_eq. rewrite (Nat.add_mod_idemp_l _ _ _ k_ne_0). rewrite (Nat.add_mod_idemp_r _ _ _ k_ne_0). rewrite Nat.add_assoc. reflexivity.
 Qed.
 
-Instance groupZk : Group Z_k :=
+Instance semigroupZk : Semigroup Z_k :=
+{
+  mult := Zk_op;
+  assoc := Zk_assoc
+}.
+
+Instance monoidZk : Monoid Z_k :=
 {
   e := zk_0;
-  mult := Zk_op;
-  inv := Z_k_inv;
   left_id := Zk_left_id;
+}.
+
+Instance groupZk : Group Z_k :=
+{
+  inv := Z_k_inv;
   left_inv := Zk_left_inv;
-  assoc := Zk_assoc
 }.
 End GroupZ_n.
