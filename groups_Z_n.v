@@ -320,4 +320,6 @@ Instance groupZk : Group Z_k :=
   inv := Z_k_inv;
   left_inv := Zk_left_inv;
 }.
+
+Print Instances Semigroup.
 End GroupZ_n.
