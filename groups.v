@@ -273,12 +273,14 @@ Section Group_theorems.
 
 Class r_action (S: Type) (r_action: S -> G -> S) : Type :=
 {
-    property: forall (x y: G) (s: S), r_action s (x*y) = r_action (r_action s x) y;
+  property: forall (x y: G) (s: S), r_action s (x*y) = r_action (r_action s x) y;
+  e_property: forall (s: S), r_action s e = s
 }.
 
 Instance exists_GG : r_action G (mult) :=
 {
-    property := fun x y s => assoc s x y
+  property := fun x y s => assoc s x y;
+  e_property := right_id
 }.
 End Group_theorems.
 Close Scope group_scope.

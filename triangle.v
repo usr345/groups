@@ -74,27 +74,25 @@ Proof.
         ** omega.
   - intros H. rewrite H. reflexivity.
 Qed.
-  (* Lt.lt_S_n: *)
-  (* forall n m : nat, Datatypes.S n < Datatypes.S m -> n < m *)
 
-
-
-    + destruct x.
-      * destruct y.
-        ** intros H. discriminate H.
-        ** destruct y. reflexivity. intros H. discriminate H.
-      * destruct x.
-        ** destruct y. intros H. discriminate H. destruct y. intros H. discriminate H.
-
-
-
+Compute Nat.divmod 4 2 0 2.
+(* Lemma a2 (x y: nat) (prf1: x < 3) (prf2: y < 3): *)
+(*   snd (Nat.divmod x 2 0 2) = snd (Nat.divmod y 2 0 2) <-> x = y. *)
+(* Proof. *)
+(*   split. *)
+(*   - destruct x as [|[|[|x1]]]; simpl. *)
+(*     + destruct y as [|y1]; simpl. *)
+(*       * reflexivity. *)
+(*       * destruct y1 as [|y2]. *)
+(*         ** simpl. intro. discriminate H. *)
+(*         **  *)
 
 Lemma imya: self_isometry Z_3 triangle rotate.
 Proof.
   unfold self_isometry. intros. destruct s1. destruct s2.
 
   destruct (Nat.eqb n0 n1) eqn:E.
-  - apply PeanoNat.Nat.eqb_eq in E. simpl. rewrite E. rewrite (PeanoNat.Nat.eqb_refl n1). apply PeanoNat.Nat.eqb_refl.
+  - apply PeanoNat.Nat.eqb_eq in E. unfold rotate. unfold Z3_op. simpl. rewrite E. rewrite (PeanoNat.Nat.eqb_refl n1). apply PeanoNat.Nat.eqb_refl.
   - simpl. destruct n0; destruct n1.
     + simpl. apply PeanoNat.Nat.eqb_refl.
     + destruct n1. simpl. destruct x.
