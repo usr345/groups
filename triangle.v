@@ -87,17 +87,37 @@ Compute Nat.divmod 4 2 0 2.
 (*         ** simpl. intro. discriminate H. *)
 (*         **  *)
 
+Search (?a =? ?b <-> ?a = ?b).
+Lemma eq_bool_eq: forall (x1 x2 x3 x4: nat), ((x1 =? x2) = (x3 =? x4)) <-> (x1 = x2 <-> x3 = x4).
+Proof.
+  intros. split.
+  - intros H. destruct (Nat.eqb_spec x1 x2); destruct (Nat.eqb_spec x3 x4). rename e into E1. rename e0 into E2.
+    + rewrite E1. rewrite E2. split; reflexivity.
+    + discriminate H.
+    + discriminate H.
+    + split.
+      * intros. rewrite H0 in n0. exfalso. apply n0. reflexivity.
+      * intros. rewrite H0 in n1. exfalso. apply n1. reflexivity.
+  - intros. destruct H. destruct (Nat.eqb_spec x1 x2); destruct (Nat.eqb_spec x3 x4); try reflexivity.
+    + set (f := n0 (H e)). destruct f.
+    + set (f := n0 (H0 e)). destruct f.
+Qed.
+
+(* Set Printing All. *)
+Lemma Z3_eq1: forall (x : Z_3), Z3 (n x) (proof x) = x.
+Proof.
+  intros. destruct x. simpl. reflexivity.
+Qed.
+
+Set Printing All.
 Lemma imya: self_isometry Z_3 triangle rotate.
 Proof.
-  unfold self_isometry. intros. destruct s1. destruct s2.
-
-  destruct (Nat.eqb n0 n1) eqn:E.
-  - apply PeanoNat.Nat.eqb_eq in E. unfold rotate. unfold Z3_op. simpl. rewrite E. rewrite (PeanoNat.Nat.eqb_refl n1). apply PeanoNat.Nat.eqb_refl.
-  - simpl. destruct n0; destruct n1.
-    + simpl. apply PeanoNat.Nat.eqb_refl.
-    + destruct n1. simpl. destruct x.
-      * simpl.
-
+  unfold self_isometry. intros. unfold colouring. unfold rotate. unfold triangle. simpl (colour
+       (Build_coloured_graph Z_3 bool
+                             (fun n0 m : Z_3 => Nat.eqb (n n0) (n m)))). set (p := (proof (Z3_op s1 x))). set (q := (proof (Z3_op s2 x))). rewrite eq_bool_eq. split.
+  - intros. set (E := Z3_eq (n (Z3_op s1 x)) (n (Z3_op s2 x)) p q H). repeat rewrite Z3_eq1 in E. simpl in s1, s2. set (H1 := @right_cancel Z_3 semigroupZ3 _ _ s1 s2 x E). rewrite H1. reflexivity.
+  - intros. set (H1 := Z3_eq (n s1) (n s2) (proof s1) (proof s2) H). repeat rewrite Z3_eq1 in H1. rewrite H1. reflexivity.
+Qed.
 
 Definition f (x: nat) := x + 1.
 Definition g (x: nat) := x + 2.

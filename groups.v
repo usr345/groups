@@ -40,6 +40,7 @@ Section Group_theorems.
   (* Условие единственности можно выразить *)
   (* следующим образом: если a*b1 = a*b2 или b1*a = b2*a, то *)
   (* b1 = b2. *)
+  Set Printing All.
   Proposition left_cancel : forall x y z:G,
       x * y = x * z -> y = z.
   Proof.

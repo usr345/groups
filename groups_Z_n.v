@@ -114,6 +114,7 @@ Definition Z_3_inv (x : Z_3) : Z_3 :=
   | Z3 m pf => Z3 ((3 - m) mod 3) (mod_upper_bound_bool (3 - m) _ three_ne_0)
   end.
 
+Set Printing All.
 Lemma Z3_eq n m p q : n = m -> Z3 n p = Z3 m q.
 Proof.
   intros H. revert p q. rewrite H. clear H. intros. apply f_equal. apply UIP_dec. apply bool_dec.
