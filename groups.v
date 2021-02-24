@@ -310,6 +310,14 @@ Section Homomorphismus.
     unfold commutative_group. intros. destruct (Hsur x). destruct (Hsur y). rewrite <- H. rewrite <- H0. rewrite <- (proof phi x0). rewrite <- (proof phi x1). rewrite (Hcomm x0 x1). reflexivity.
   Qed.
 
+  (* 133. Доказать, что при гомоморфизме группы G в *)
+(* группу F единица группы G переходит в единицу группы F . *)
+  Theorem homo2 (phi: Homomorphism): (f phi e) = e.
+  Proof.
+    apply left_cancel with (Hsemi := Hsemi0) (Hmono := Hmono0) (x := (f phi e)).
+    - apply Fgr.
+    - rewrite  <- (proof phi e). rewrite left_id. rewrite (@right_id F _ _ Fgr). reflexivity.
+  Qed.
 
 End Homomorphismus.
 Close Scope group_scope.
