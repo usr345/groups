@@ -40,7 +40,7 @@ Section Group_theorems.
   (* Условие единственности можно выразить *)
   (* следующим образом: если a*b1 = a*b2 или b1*a = b2*a, то *)
   (* b1 = b2. *)
-  Set Printing All.
+  (* Set Printing All. *)
   Proposition left_cancel : forall x y z:G,
       x * y = x * z -> y = z.
   Proof.
@@ -283,5 +283,33 @@ Instance exists_GG : r_action G (mult) :=
   property := fun x y s => assoc s x y;
   e_property := right_id
 }.
+
+Definition commutative_group := forall (x y : G),
+    (mult x y) = (mult y x).
+
 End Group_theorems.
+
+Section Homomorphismus.
+
+  Variable G: Type.
+  Context `{Hgr: Group G}.
+
+  Variable F: Type.
+  Context `{Fgr: Group F}.
+
+  Record Homomorphism: Type :=
+    Build_homomorphism
+    {
+        f: G -> F;
+        proof: forall (x y: G), f (mult x y) = mult (f x) (f y)
+    }.
+
+  Theorem homo1 (phi: Homomorphism) (Hcomm: commutative_group G) (Hsur: forall (f1: F), exists (g: G), (f phi g) = f1):
+      (commutative_group F).
+  Proof.
+    unfold commutative_group. intros. destruct (Hsur x). destruct (Hsur y). rewrite <- H. rewrite <- H0. rewrite <- (proof phi x0). rewrite <- (proof phi x1). rewrite (Hcomm x0 x1). reflexivity.
+  Qed.
+
+
+End Homomorphismus.
 Close Scope group_scope.
