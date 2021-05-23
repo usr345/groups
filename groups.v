@@ -1,7 +1,11 @@
 Require Import Coq.Setoids.Setoid.
 Require Import Coq.Lists.List.
 Require Import PeanoNat.
+Require Import Bool.
 Require Import Coq.Program.Basics.
+
+(* Locate "*". *)
+(* Definition aaa (l: (list nat * bool)): nat := fold_left mult 0 if evenb. *)
 
 (* G - носитель группы *)
 Class Semigroup G : Type :=
@@ -14,13 +18,18 @@ Class Semigroup G : Type :=
 Class Monoid G `{Hsemi: Semigroup G} : Type :=
 {
   e : G;
-  left_id : forall x:G, mult e x = x;
+  left_id : forall x: G, mult e x = x;
 }.
 
 Class Group G `{Hmono: Monoid G} : Type :=
 {
     inv : G -> G;
-    left_inv : forall x:G, mult (inv x) x = e;
+    left_inv : forall x: G, mult (inv x) x = e;
+}.
+
+Class AbelianGroup G `{Hgr: Group G} : Type :=
+{
+    comm : forall (x y : G), mult x y = mult y x;
 }.
 
 Declare Scope group_scope.
@@ -41,38 +50,40 @@ Section Group_theorems.
   (* следующим образом: если a*b1 = a*b2 или b1*a = b2*a, то *)
   (* b1 = b2. *)
   (* Set Printing All. *)
-  Proposition left_cancel : forall x y z:G,
-      x * y = x * z -> y = z.
+  Proposition left_cancel : forall a x y:G,
+      a * x = a * y -> x = y.
   Proof.
-    intros x y z H. assert (inv x * (x * y) = inv x * (x * z))
+    intros a x y H. assert (inv a * (a * x) = inv a * (a * y))
       as Hinvx.
     - rewrite H. reflexivity.
     - repeat rewrite assoc in Hinvx. rewrite left_inv in Hinvx. repeat rewrite left_id in Hinvx. assumption.
   Qed.
 
-  Proposition left_cancel_alt_proof : forall x y z:G,
-      x * y = x * z -> y = z.
+  Proposition left_cancel_alt_proof : forall a x y:G,
+      a * x = a * y -> x = y.
   Proof.
-    intros x y z H.
-    (* Здесь самое интересное: по сути это умножение гипотезы слева на inv x *)
-    apply f_equal with (f := fun g:G => inv x * g) in H. repeat rewrite assoc in H. repeat rewrite left_inv in H. repeat rewrite left_id in H. assumption.
+    intros a x y H.
+    (* Здесь самое интересное: по сути это умножение гипотезы слева на inv a *)
+    (* f_equal : forall (A B : Type) (f : A -> B) (x y : A), *)
+    (*    x = y -> f x = f y *)
+    apply f_equal with (f := fun g:G => inv a * g) in H. repeat rewrite assoc in H. repeat rewrite left_inv in H. repeat rewrite left_id in H. assumption.
   Qed.
 
   Proposition right_id : forall x:G, x * e = x.
   Proof.
-    intro. apply left_cancel with (x := inv x). rewrite assoc. repeat rewrite left_inv. rewrite left_id. reflexivity.
+    intro. apply left_cancel with (a := inv x). rewrite assoc. repeat rewrite left_inv. rewrite left_id. reflexivity.
   Qed.
 
   Proposition right_inv:
     forall x:G, x * inv x = e.
   Proof.
-    intro. apply left_cancel with (x := inv x). rewrite assoc.
+    intro. apply left_cancel with (a := inv x). rewrite assoc.
     rewrite left_inv. rewrite left_id. rewrite right_id. reflexivity.
   Qed.
 
   Proposition right_inv_unique: forall x y:G, x * y = e -> inv x = y.
   Proof.
-    intros x y H. apply left_cancel with (x := x). transitivity e.
+    intros x y H. apply left_cancel with (a := x). transitivity e.
     - apply right_inv.
     - symmetry. assumption.
   Qed.
@@ -312,12 +323,163 @@ Section Homomorphismus.
 
   (* 133. Доказать, что при гомоморфизме группы G в *)
 (* группу F единица группы G переходит в единицу группы F . *)
-  Theorem homo2 (phi: Homomorphism): (f phi e) = e.
-  Proof.
-    apply left_cancel with (Hsemi := Hsemi0) (Hmono := Hmono0) (x := (f phi e)).
-    - apply Fgr.
-    - rewrite  <- (proof phi e). rewrite left_id. rewrite (@right_id F _ _ Fgr). reflexivity.
-  Qed.
+  (* Theorem homo2 (phi: Homomorphism): (f phi e) = e. *)
+  (* Proof. *)
+  (*   apply left_cancel with (Hsemi := Hsemi0) (Hmono := Hmono0) (x := (f phi e)). *)
+  (*   - apply Fgr. *)
+  (*   - rewrite  <- (proof phi e). rewrite left_id. rewrite (@right_id F _ _ Fgr). reflexivity. *)
+  (* Qed. *)
 
 End Homomorphismus.
+
+Axiom functional_extensionality :
+  forall A (B : A -> Type)
+         (f g : forall a, B a),
+    (forall a, f a = g a) ->
+    f = g.
+
+Axiom proof_irrelevance :
+  forall (P : Prop) (p q : P), p = q.
+
+(* Print exist. *)
+(* Lemma l (r1 r2 : { R : nat -> nat -> bool | *)
+(*                    forall n, R n n = true }) : *)
+(*   (forall n1 n2, proj1_sig r1 n1 n2 = proj1_sig r2 n1 n2) -> *)
+(*   r1 = r2. *)
+(* Proof. *)
+(*   destruct r1 as [r1 H1], r2 as [r2 H2]. *)
+(*   simpl. *)
+(*   intros H. *)
+(*   assert (H': r1 = r2). *)
+(*   { apply functional_extensionality. *)
+(*     intros n1. *)
+(*     apply functional_extensionality. *)
+(*     intros n2. *)
+(*     apply H. } *)
+(*   subst r2. *)
+(*   rename r1 into r. *)
+(*   f_equal. *)
+(*   apply proof_irrelevance. *)
+(* Qed. *)
+
+(* Inductive bool: Set := *)
+(*   | true *)
+(*   | false. *)
+
+(* Lemma equality_commutes: *)
+(*   forall (a: bool) (b: bool), a = b -> b = a. *)
+(* Proof. *)
+(*   intros. *)
+(*   subst a. *)
+(*   reflexivity. *)
+(* Qed. *)
+
+Inductive megaeq: forall (A B: Type) (x: A) (y: B), Prop :=
+  megarefl A x : megaeq A A x x.
+
+Search "megaeq".
+
+Section Subgroup.
+  (* Пусть дано множество - носитель группы *)
+  Variable G: Type.
+  (* Групповые свойства *)
+  Context `{Hgr: Group G}.
+
+  (* Предикат, определяющий подмножество *)
+  Variable P : G -> Prop.
+  (* Единица принадлежит подмножеству *)
+  Variable s_e: P(e).
+  (* Умножение 2-х элементов подмножества принадлежит подмножеству *)
+  Variable mul_axiom: forall x y: sig P, P (proj1_sig x * proj1_sig y).
+  (* Обратный элемент для элемента подмножества принадлежит подмножеству *)
+  Variable inv_axiom: forall x: sig P, P (inv (proj1_sig x)).
+
+  (* Ф-ция умножения 2-х элементов подмножества: *)
+  (* (умножение 2-х первых проекций | s_mul) *)
+  Definition mult1 x y := exist P (proj1_sig x * proj1_sig y) (mul_axiom x y).
+  (* Ф-ция получения обратного элемента для данного элемента подмножества *)
+  Definition inv1 (x: sig P) : sig P := exist P (inv (proj1_sig x)) (inv_axiom x).
+
+  Theorem assoc1: forall x y z: sig P,
+      mult1 x (mult1 y z) = mult1 (mult1 x y) z.
+  Proof.
+    intros [x Px] [y Py] [z Pz].
+    set (Hproj1 := assoc x y z).
+    - unfold mult1. simpl. set (R := exist P (x * (y * z))
+    (mul_axiom (exist P x Px)
+           (exist P (y * z) (mul_axiom (exist P y Py) (exist P z Pz))))).
+      set (L := exist P (x * y * z)
+                      (mul_axiom
+                         (exist P (x * y) (mul_axiom (exist P x Px) (exist P y Py)))
+                         (exist P z Pz))).
+      set (Q := @eq_sig G P R L Hproj1). apply Q. simpl. apply proof_irrelevance.
+  Qed.
+
+  Instance semigroupSubgroup : Semigroup (sig P) :=
+  {
+    mult := mult1;
+    assoc := assoc1
+  }.
+
+  (* e с доказательством того, что e принадлежит подмножеству *)
+  Definition sub_e := exist P e s_e.
+  Theorem subgroup_left_id: forall x: (sig P), mult1 sub_e x = x.
+  Proof.
+    intros [x Px]. set (x_pair := exist P x Px). unfold mult1. simpl. set (Q := @eq_sig G P (exist P (e * x) (mul_axiom sub_e x_pair)) x_pair). simpl in Q. apply (Q (left_id _)). apply proof_irrelevance.
+  Qed.
+
+  Instance monoidSubgroup : Monoid (sig P) :=
+  {
+    e := sub_e;
+    left_id := subgroup_left_id;
+  }.
+
+  Definition sub_inv (x: sig P): sig P := exist P (inv (proj1_sig x)) (inv_axiom x).
+  Theorem subgroup_left_inv: forall x: (sig P), mult1 (inv1 x) x = sub_e.
+  Proof.
+    intros [x Px]. set (x_pair := exist P x Px). unfold mult1. simpl.
+    set (Q := @eq_sig G P (exist P (inv x * x) (mul_axiom (inv1 x_pair) x_pair)) sub_e). simpl in Q.
+    apply (Q (left_inv x)). apply proof_irrelevance.
+  Qed.
+
+  Instance subgroup_Group : Group (sig P) :=
+  {
+    inv := sub_inv;
+    left_inv := subgroup_left_inv;
+  }.
+End Subgroup.
+
+Section generatedSubgroup.
+  (* Пусть дано множество - носитель группы *)
+  Variable G: Type.
+  (* Групповые свойства *)
+  Context `{Hgr: Group G}.
+
+  Definition id_or_inv (P1: G -> Prop): Type := ((sig P1) * bool).
+  Definition invert_list (P: G -> Prop) (l: list (id_or_inv P)): (list (id_or_inv P)) :=
+    rev (
+        map
+          (fun x => (fst x, negb (snd x)))
+          l).
+
+  Definition gfold (P1: G -> Prop) (l: list (id_or_inv P1)) :=
+    fold_left
+      mult
+      (map (fun (v: (sig P1) * bool) =>
+              if snd v
+              then (proj1_sig (fst v))
+              else inv (proj1_sig (fst v)))
+           l) e.
+
+  (* Порождающее множество группы G {\displaystyle G} G — это подмножество S {\displaystyle S} S в G {\displaystyle G} G, такое, что каждый элемент G {\displaystyle G} G может быть записан как произведение конечного числа элементов S {\displaystyle S} S и их обратных.  *)
+  Definition generatedSubgroup (P1: G -> Prop) :=
+    sig (fun x =>
+           @ex
+             (list (id_or_inv P1))
+             (fun l =>
+                (x = gfold P1 l))).
+
+  Definition commutant := { x : G | exists l: list (G*G), x = fold (fun p a -> mult1 (commutator (fst p) (snd p)) a) e l }.
+End generatedSubgroup.
+
 Close Scope group_scope.

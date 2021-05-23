@@ -1,0 +1,203 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper]{geometry}
+\geometry{verbose,tmargin=2cm,bmargin=2cm,lmargin=2cm,rmargin=2cm}
+\usepackage[T2A]{fontenc}
+\usepackage[english,russian]{babel}
+\babelfont{rm}{CMU Concrete}
+\babelfont{sf}{CMU Sans Serif}
+\babelfont{tt}{CMU Typewriter Text}
+
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{minted}
+\usepackage{amsmath, amsthm, amssymb, amsfonts}
+\newcounter{thm}
+\newtheorem{proposition}[thm]{Предложение}
+\title{\vspace{-5ex}Формализация теории групп на базе книги Алексеева В.Б. ``Теорема Абеля в задачах и решениях''\vspace{-4ex}}
+\begin{document}
+\maketitle
+
+Прежде всего дадим формальные определения понятям ``полугруппа'', ``моноид'' и ``группа''.
+
+\begin{minted}[breaklines, breakanywhere, tabsize=2]{coq}
+(* G - носитель группы *)
+(* mult - групповая операция *)
+Class Semigroup G : Type :=
+{
+    mult : G -> G -> G;
+    assoc : forall x y z:G,
+        mult x (mult y z) = mult (mult x y) z
+}.
+
+Class Monoid G `{Hsemi: Semigroup G} : Type :=
+{
+  e : G;
+  left_id : forall x: G, mult e x = x;
+}.
+
+Class Group G `{Hmono: Monoid G} : Type :=
+{
+    inv : G -> G;
+    left_inv : forall x: G, mult (inv x) x = e;
+}.
+\end{minted}
+
+Зададим нотацию для операции умножения в групповом контексте:
+
+\begin{minted}[breaklines, breakanywhere, tabsize=2]{coq}
+Declare Scope group_scope.
+Infix "*" := mult (at level 40, left associativity) : group_scope.
+\end{minted}
+
+Мы начнем с задачи № 24 из книги.
+
+\begin{proposition}
+Пусть $a, b$ — произвольные элементы некоторой группы $G$. Доказать, что каждое из уравнений $a \cdot x = b$ и $y \cdot a = b$ имеет, и притом ровно одно, решение в данной группе.
+\end{proposition}
+
+Сначала рассмотрии первое уравнение, и докажем единственность при умножении на $a$ слева.
+
+\begin{minted}[breaklines, breakanywhere, tabsize=2]{coq}
+Open Scope group_scope.
+Section Group_theorems.
+
+  Variable G: Type.
+  Context `{Hgr: Group G}.
+
+  Proposition left_cancel : forall a x y:G,
+      a * x = a * y -> x = y.
+  Proof.
+    intros a x y H. assert (inv a * (a * x) = inv a * (a * y))
+      as Hinvx.
+    - rewrite H. reflexivity.
+    - repeat rewrite assoc in Hinvx. rewrite left_inv in Hinvx. repeat rewrite left_id in Hinvx. assumption.
+  Qed.
+
+  Proposition left_cancel_alt_proof : forall a x y:G,
+      a * x = a * y -> x = y.
+  Proof.
+    intros a x y H.
+    (* Здесь самое интересное: по сути это умножение гипотезы слева на inv a, заменяющее assert в предыдущей теореме *)
+    (* f_equal : forall (A B : Type) (f : A -> B) (x y : A), *)
+    (*    x = y -> f x = f y *)
+    apply f_equal with (f := fun g:G => inv a * g) in H.
+    (* Дальше всё одинаково *)
+    repeat rewrite assoc in H. repeat rewrite left_inv in H. repeat rewrite left_id in H. assumption.
+  Qed.
+\end{minted}
+
+Для доказательства второго предложения: единственности решения при умножении справа $y \cdot a = b$, нам понадобится доказать 2 вспомогательных предложения.
+
+\begin{proposition}
+  $\forall x \in G, x \cdot e = x$
+\end{proposition}
+
+\begin{minted}[breaklines, breakanywhere, tabsize=2]{coq}
+  Proposition right_id : forall x:G, x * e = x.
+  Proof.
+    intro. apply left_cancel with (a := inv x). rewrite assoc. repeat rewrite left_inv. rewrite left_id. reflexivity.
+  Qed.
+\end{minted}
+
+\begin{minipage}{.46\textwidth}
+\mintinline{coq}{Proof.}
+\begin{verbatim}
+G : Type
+Hsemi : Semigroup G
+Hmono : Monoid G
+Hgr : Group G
+------------------------
+forall x : G, x * e = x
+\end{verbatim}
+\end{minipage}
+\hfill
+\begin{minipage}{.46\textwidth}
+\mintinline{coq}{intro.}
+\begin{verbatim}
+G : Type
+Hsemi : Semigroup G
+Hmono : Monoid G
+Hgr : Group G
+x : G
+---------------------
+x * e = x
+\end{verbatim}
+\end{minipage}
+
+\bigskip
+\noindent\makebox[\textwidth]{\hrulefill}
+
+\bigskip
+\begin{minipage}{.46\textwidth}
+\mintinline{coq}{apply left_cancel with (a := inv x).}
+\begin{verbatim}
+G : Type
+Hsemi : Semigroup G
+Hmono : Monoid G
+Hgr : Group G
+x : G
+----------------------------
+inv x * (x * e) = inv x * x
+\end{verbatim}
+\end{minipage}
+\hfill
+\begin{minipage}{.46\textwidth}
+\mintinline{coq}{rewrite assoc.}
+\begin{verbatim}
+G : Type
+Hsemi : Semigroup G
+Hmono : Monoid G
+Hgr : Group G
+x : G
+-------------------------
+inv x * x * e = inv x * x
+\end{verbatim}
+\end{minipage}
+
+\bigskip
+\noindent\makebox[\textwidth]{\hrulefill}
+
+\bigskip
+\begin{minipage}{.46\textwidth}
+\mintinline{coq}{repeat rewrite left_inv.}
+\begin{verbatim}
+G : Type
+Hsemi : Semigroup G
+Hmono : Monoid G
+Hgr : Group G
+x : G
+-------------------
+e * e = e
+\end{verbatim}
+\end{minipage}
+\hfill
+\begin{minipage}{.46\textwidth}
+\mintinline{coq}{rewrite left_id. reflexivity.}
+\begin{verbatim}
+G : Type
+Hsemi : Semigroup G
+Hmono : Monoid G
+Hgr : Group G
+x : G
+--------------------
+e = e
+\end{verbatim}$\square$
+\end{minipage}
+
+\begin{proposition}
+$\forall x \in G, x \cdot x^{-1} = e$
+\end{proposition}
+
+\begin{minted}[breaklines, breakanywhere, tabsize=2]{coq}
+  Proposition right_inv:
+    forall x:G, x * inv x = e.
+  Proof.
+    intro. apply left_cancel with (x := inv x). rewrite assoc.
+    rewrite left_inv. rewrite left_id. rewrite right_id. reflexivity.
+  Qed.
+\end{minted}
+
+\begin{proposition}
+$\forall x \in G, x \cdot x^{-1} = e$
+\end{proposition}
+\end{document}
