@@ -414,6 +414,90 @@ Section Subgroup.
                          (exist P z Pz))).
       set (Q := @eq_sig G P R L Hproj1). apply Q. simpl. apply proof_irrelevance.
   Qed.
+End Homomorphismus.
+
+Axiom functional_extensionality :
+  forall A (B : A -> Type)
+         (f g : forall a, B a),
+    (forall a, f a = g a) ->
+    f = g.
+
+Axiom proof_irrelevance :
+  forall (P : Prop) (p q : P), p = q.
+
+(* Print exist. *)
+(* Lemma l (r1 r2 : { R : nat -> nat -> bool | *)
+(*                    forall n, R n n = true }) : *)
+(*   (forall n1 n2, proj1_sig r1 n1 n2 = proj1_sig r2 n1 n2) -> *)
+(*   r1 = r2. *)
+(* Proof. *)
+(*   destruct r1 as [r1 H1], r2 as [r2 H2]. *)
+(*   simpl. *)
+(*   intros H. *)
+(*   assert (H': r1 = r2). *)
+(*   { apply functional_extensionality. *)
+(*     intros n1. *)
+(*     apply functional_extensionality. *)
+(*     intros n2. *)
+(*     apply H. } *)
+(*   subst r2. *)
+(*   rename r1 into r. *)
+(*   f_equal. *)
+(*   apply proof_irrelevance. *)
+(* Qed. *)
+
+(* Inductive bool: Set := *)
+(*   | true *)
+(*   | false. *)
+
+(* Lemma equality_commutes: *)
+(*   forall (a: bool) (b: bool), a = b -> b = a. *)
+(* Proof. *)
+(*   intros. *)
+(*   subst a. *)
+(*   reflexivity. *)
+(* Qed. *)
+
+Inductive megaeq: forall (A B: Type) (x: A) (y: B), Prop :=
+  megarefl A x : megaeq A A x x.
+
+Search "megaeq".
+
+Section Subgroup.
+  (* Пусть дано множество - носитель группы *)
+  Variable G: Type.
+  (* Групповые свойства *)
+  Context `{Hgr: Group G}.
+
+  (* Предикат, определяющий подмножество *)
+  Variable P : G -> Prop.
+  (* Единица принадлежит подмножеству *)
+  Variable s_e: P(e).
+  (* Умножение 2-х элементов подмножества принадлежит подмножеству *)
+  Variable mul_axiom: forall x y: sig P, P (proj1_sig x * proj1_sig y).
+  (* Обратный элемент для элемента подмножества принадлежит подмножеству *)
+  Variable inv_axiom: forall x: sig P, P (inv (proj1_sig x)).
+
+  (* Ф-ция умножения 2-х элементов подмножества: *)
+  (* (умножение 2-х первых проекций | s_mul) *)
+  Definition mult1 x y := exist P (proj1_sig x * proj1_sig y) (mul_axiom x y).
+  (* Ф-ция получения обратного элемента для данного элемента подмножества *)
+  Definition inv1 (x: sig P) : sig P := exist P (inv (proj1_sig x)) (inv_axiom x).
+
+  Theorem assoc1: forall x y z: sig P,
+      mult1 x (mult1 y z) = mult1 (mult1 x y) z.
+  Proof.
+    intros [x Px] [y Py] [z Pz].
+    set (Hproj1 := assoc x y z).
+    - unfold mult1. simpl. set (R := exist P (x * (y * z))
+    (mul_axiom (exist P x Px)
+           (exist P (y * z) (mul_axiom (exist P y Py) (exist P z Pz))))).
+      set (L := exist P (x * y * z)
+                      (mul_axiom
+                         (exist P (x * y) (mul_axiom (exist P x Px) (exist P y Py)))
+                         (exist P z Pz))).
+      set (Q := @eq_sig G P R L Hproj1). apply Q. simpl. apply proof_irrelevance.
+  Qed.
 
   Instance semigroupSubgroup : Semigroup (sig P) :=
   {
