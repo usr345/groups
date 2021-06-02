@@ -414,90 +414,6 @@ Section Subgroup.
                          (exist P z Pz))).
       set (Q := @eq_sig G P R L Hproj1). apply Q. simpl. apply proof_irrelevance.
   Qed.
-End Homomorphismus.
-
-Axiom functional_extensionality :
-  forall A (B : A -> Type)
-         (f g : forall a, B a),
-    (forall a, f a = g a) ->
-    f = g.
-
-Axiom proof_irrelevance :
-  forall (P : Prop) (p q : P), p = q.
-
-(* Print exist. *)
-(* Lemma l (r1 r2 : { R : nat -> nat -> bool | *)
-(*                    forall n, R n n = true }) : *)
-(*   (forall n1 n2, proj1_sig r1 n1 n2 = proj1_sig r2 n1 n2) -> *)
-(*   r1 = r2. *)
-(* Proof. *)
-(*   destruct r1 as [r1 H1], r2 as [r2 H2]. *)
-(*   simpl. *)
-(*   intros H. *)
-(*   assert (H': r1 = r2). *)
-(*   { apply functional_extensionality. *)
-(*     intros n1. *)
-(*     apply functional_extensionality. *)
-(*     intros n2. *)
-(*     apply H. } *)
-(*   subst r2. *)
-(*   rename r1 into r. *)
-(*   f_equal. *)
-(*   apply proof_irrelevance. *)
-(* Qed. *)
-
-(* Inductive bool: Set := *)
-(*   | true *)
-(*   | false. *)
-
-(* Lemma equality_commutes: *)
-(*   forall (a: bool) (b: bool), a = b -> b = a. *)
-(* Proof. *)
-(*   intros. *)
-(*   subst a. *)
-(*   reflexivity. *)
-(* Qed. *)
-
-Inductive megaeq: forall (A B: Type) (x: A) (y: B), Prop :=
-  megarefl A x : megaeq A A x x.
-
-Search "megaeq".
-
-Section Subgroup.
-  (* Пусть дано множество - носитель группы *)
-  Variable G: Type.
-  (* Групповые свойства *)
-  Context `{Hgr: Group G}.
-
-  (* Предикат, определяющий подмножество *)
-  Variable P : G -> Prop.
-  (* Единица принадлежит подмножеству *)
-  Variable s_e: P(e).
-  (* Умножение 2-х элементов подмножества принадлежит подмножеству *)
-  Variable mul_axiom: forall x y: sig P, P (proj1_sig x * proj1_sig y).
-  (* Обратный элемент для элемента подмножества принадлежит подмножеству *)
-  Variable inv_axiom: forall x: sig P, P (inv (proj1_sig x)).
-
-  (* Ф-ция умножения 2-х элементов подмножества: *)
-  (* (умножение 2-х первых проекций | s_mul) *)
-  Definition mult1 x y := exist P (proj1_sig x * proj1_sig y) (mul_axiom x y).
-  (* Ф-ция получения обратного элемента для данного элемента подмножества *)
-  Definition inv1 (x: sig P) : sig P := exist P (inv (proj1_sig x)) (inv_axiom x).
-
-  Theorem assoc1: forall x y z: sig P,
-      mult1 x (mult1 y z) = mult1 (mult1 x y) z.
-  Proof.
-    intros [x Px] [y Py] [z Pz].
-    set (Hproj1 := assoc x y z).
-    - unfold mult1. simpl. set (R := exist P (x * (y * z))
-    (mul_axiom (exist P x Px)
-           (exist P (y * z) (mul_axiom (exist P y Py) (exist P z Pz))))).
-      set (L := exist P (x * y * z)
-                      (mul_axiom
-                         (exist P (x * y) (mul_axiom (exist P x Px) (exist P y Py)))
-                         (exist P z Pz))).
-      set (Q := @eq_sig G P R L Hproj1). apply Q. simpl. apply proof_irrelevance.
-  Qed.
 
   Instance semigroupSubgroup : Semigroup (sig P) :=
   {
@@ -531,6 +447,18 @@ Section Subgroup.
     inv := sub_inv;
     left_inv := subgroup_left_inv;
   }.
+
+  Context `{Hab: @AbelianGroup G _ _ Hgr}.
+
+  Theorem AbelianSubgroup_Abelian: forall x y: (sig P), x * y = y * x.
+  Proof.
+    intros. set (Q := @eq_sig G P (x*y) (y*x)). simpl in Q. apply (Q (comm (proj1_sig x) (proj1_sig y))). apply proof_irrelevance.
+  Qed.
+
+  Instance Abelian_subgroup_Group : AbelianGroup (sig P) :=
+  {
+    comm := AbelianSubgroup_Abelian;
+  }.
 End Subgroup.
 
 Section generatedSubgroup.
@@ -563,7 +491,88 @@ Section generatedSubgroup.
              (fun l =>
                 (x = gfold P1 l))).
 
-  Definition commutant := { x : G | exists l: list (G*G), x = fold (fun p a -> mult1 (commutator (fst p) (snd p)) a) e l }.
+  (* Definition commutant := { x : G | exists l: list (G*G), x = fold (fun p a => mult1 (commutator (fst p) (snd p)) a) e l }. *)
 End generatedSubgroup.
 
+
+Section CartesianGroupProduct.
+  (* Пусть дано множество - носитель группы *)
+  Variable G: Type.
+  Variable H: Type.
+  (* Групповые свойства *)
+  Context `{Hgr1: Group G}.
+  Context `{Hgr2: Group H}.
+
+  Definition mulp (x y : G * H): (G * H) := (mult (fst x) (fst y), mult (snd x) (snd y)).
+
+  Theorem assocGroupProduct: forall x y z: G * H,
+      mulp x (mulp y z) = mulp (mulp x y) z.
+  Proof.
+    intros. unfold mulp. simpl. rewrite (@assoc G). rewrite (@assoc H). reflexivity.
+  Qed.
+
+  Instance semigroupGroupProduct : Semigroup (G * H) :=
+  {
+    mult := mulp;
+    assoc := assocGroupProduct;
+  }.
+
+  Definition groupProduct_e: (G * H) := (e, e).
+
+  Theorem GroupProductLeftId: forall x: G * H,
+      mult groupProduct_e x = x.
+  Proof.
+    intros. unfold groupProduct_e. destruct x. unfold mult. simpl. unfold mulp. simpl. repeat rewrite left_id. reflexivity.
+  Qed.
+
+  Instance monoidGroupProduct : Monoid (G * H) :=
+  {
+    e := groupProduct_e;
+    left_id := GroupProductLeftId;
+  }.
+
+  Definition groupProduct_inv (x: G*H) := (inv (fst x), inv(snd x)).
+
+  Theorem groupProduct_left_inv : forall x: (G * H), mult (groupProduct_inv x) x = groupProduct_e.
+  Proof.
+    intros. destruct x. unfold mult. simpl. unfold mulp. simpl. repeat rewrite left_inv. unfold groupProduct_e. reflexivity.
+  Qed.
+
+  Instance groupGroupProduct : Group (G * H) :=
+  {
+      inv := groupProduct_inv;
+      left_inv := groupProduct_left_inv;
+  }.
+
+  Theorem projectHomomorphismus : forall (x y: (G * H)), fst (mult x y) = mult (fst x) (fst y).
+  Proof.
+    intros. simpl. reflexivity.
+  Qed.
+
+  Theorem projectHomomorphismus2 : forall (x y: (G * H)), snd (mult x y) = mult (snd x) (snd y).
+  Proof.
+    intros. simpl. reflexivity.
+  Qed.
+
+  Definition rec_fst := Build_homomorphism (G*H) G fst projectHomomorphismus.
+
+  Definition rec_snd := Build_homomorphism (G*H) H snd projectHomomorphismus2.
+
+  Definition get_e_pair (x: G): (G*H) := (x, e).
+
+  Theorem projectHomomorphismus3 : forall (x y: G), get_e_pair (mult x y) = mult (get_e_pair x) (get_e_pair y).
+  Proof.
+    intros. unfold get_e_pair. simpl. unfold mulp. simpl. rewrite left_id. reflexivity.
+  Qed.
+
+  Definition rec_get_e_pair := Build_homomorphism G (G*H) get_e_pair projectHomomorphismus3.
+
+  Context `{Gab: @AbelianGroup G Hsemi Hmono Hgr1}.
+  Context `{Hab: @AbelianGroup H _ _ Hgr2}.
+
+  Theorem AbelianProduct: forall (x y : (G*H)), mult x y = mult y x.
+  Proof.
+    intros. unfold mult. simpl. unfold mulp. rewrite (@comm G _ _ _ Gab). rewrite (@comm H _ _ _ Hab). reflexivity.
+  Qed.
+End
 Close Scope group_scope.
