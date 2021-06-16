@@ -300,90 +300,20 @@ Definition commutative_group := forall (x y : G),
 
 End Group_theorems.
 
-Section Homomorphismus.
-
-  Variable G: Type.
-  Context `{Hgr: Group G}.
-
-  Variable F: Type.
-  Context `{Fgr: Group F}.
-
-  Record Homomorphism: Type :=
-    Build_homomorphism
-    {
-        f: G -> F;
-        proof: forall (x y: G), f (mult x y) = mult (f x) (f y)
-    }.
-
-  Theorem homo1 (phi: Homomorphism) (Hcomm: commutative_group G) (Hsur: forall (f1: F), exists (g: G), (f phi g) = f1):
-      (commutative_group F).
-  Proof.
-    unfold commutative_group. intros. destruct (Hsur x). destruct (Hsur y). rewrite <- H. rewrite <- H0. rewrite <- (proof phi x0). rewrite <- (proof phi x1). rewrite (Hcomm x0 x1). reflexivity.
-  Qed.
-
-  (* 133. Доказать, что при гомоморфизме группы G в *)
-(* группу F единица группы G переходит в единицу группы F . *)
-  (* Theorem homo2 (phi: Homomorphism): (f phi e) = e. *)
-  (* Proof. *)
-  (*   apply left_cancel with (Hsemi := Hsemi0) (Hmono := Hmono0) (x := (f phi e)). *)
-  (*   - apply Fgr. *)
-  (*   - rewrite  <- (proof phi e). rewrite left_id. rewrite (@right_id F _ _ Fgr). reflexivity. *)
-  (* Qed. *)
-
-End Homomorphismus.
-
-Axiom functional_extensionality :
-  forall A (B : A -> Type)
-         (f g : forall a, B a),
-    (forall a, f a = g a) ->
-    f = g.
-
-Axiom proof_irrelevance :
-  forall (P : Prop) (p q : P), p = q.
-
-(* Print exist. *)
-(* Lemma l (r1 r2 : { R : nat -> nat -> bool | *)
-(*                    forall n, R n n = true }) : *)
-(*   (forall n1 n2, proj1_sig r1 n1 n2 = proj1_sig r2 n1 n2) -> *)
-(*   r1 = r2. *)
-(* Proof. *)
-(*   destruct r1 as [r1 H1], r2 as [r2 H2]. *)
-(*   simpl. *)
-(*   intros H. *)
-(*   assert (H': r1 = r2). *)
-(*   { apply functional_extensionality. *)
-(*     intros n1. *)
-(*     apply functional_extensionality. *)
-(*     intros n2. *)
-(*     apply H. } *)
-(*   subst r2. *)
-(*   rename r1 into r. *)
-(*   f_equal. *)
-(*   apply proof_irrelevance. *)
-(* Qed. *)
-
-(* Inductive bool: Set := *)
-(*   | true *)
-(*   | false. *)
-
-(* Lemma equality_commutes: *)
-(*   forall (a: bool) (b: bool), a = b -> b = a. *)
-(* Proof. *)
-(*   intros. *)
-(*   subst a. *)
-(*   reflexivity. *)
-(* Qed. *)
-
-Inductive megaeq: forall (A B: Type) (x: A) (y: B), Prop :=
-  megarefl A x : megaeq A A x x.
-
-Search "megaeq".
-
 Section Subgroup.
   (* Пусть дано множество - носитель группы *)
   Variable G: Type.
   (* Групповые свойства *)
   Context `{Hgr: Group G}.
+
+  Axiom functional_extensionality :
+  forall A (B : A -> Type)
+         (f g : forall a, B a),
+    (forall a, f a = g a) ->
+    f = g.
+
+  Axiom proof_irrelevance :
+  forall (P : Prop) (p q : P), p = q.
 
   (* Предикат, определяющий подмножество *)
   Variable P : G -> Prop.
@@ -460,6 +390,158 @@ Section Subgroup.
     comm := AbelianSubgroup_Abelian;
   }.
 End Subgroup.
+
+Section Homomorphismus.
+
+  Variable G: Type.
+  Context `{Gsemi: Semigroup G}.
+
+  Variable F: Type.
+  Context `{Fsemi: Semigroup F}.
+
+  Record Homomorphism: Type :=
+    Build_homomorphism
+    {
+        f: G -> F;
+        proof: forall (x y: G), f (mult x y) = mult (f x) (f y)
+    }.
+
+    Record Isomorphism: Type :=
+    Build_isomorphism
+      {
+        fun1: Homomorphism;
+        fun2: F -> G;
+        left_right_id: forall (x: G), fun2 ((f fun1) x) = x;
+        right_left_id: forall (y: F), (f fun1) (fun2 y) = y;
+        (* Homo_f: forall (a b: G), fun1 (a * b) = (fun1 a) * (fun1 b); *)
+        (* Homo_right: forall (a b: G2), right (a * b) = (right a) * (right b) *)
+      }.
+
+  Theorem homo1 (phi: Homomorphism) (Hcomm: commutative_group G) (Hsur: forall (f1: F), exists (g: G), (f phi g) = f1):
+      (commutative_group F).
+  Proof.
+    unfold commutative_group. intros. destruct (Hsur x). destruct (Hsur y). rewrite <- H. rewrite <- H0. rewrite <- (proof phi x0). rewrite <- (proof phi x1). rewrite (Hcomm x0 x1). reflexivity.
+  Qed.
+
+  (* 133. Доказать, что при гомоморфизме группы G в *)
+  (* группу F единица группы G переходит в единицу группы F . *)
+  Theorem homomorphism_saves_e: forall (phi: Homomorphism) `{Hmono: @Monoid G Gsemi} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono}, (f phi) e = e.
+  Proof.
+    intros. apply (left_cancel_alt_proof F (f phi e)). rewrite <- (proof phi e e). rewrite left_id. rewrite right_id.
+    - reflexivity.
+    - apply Fgroup.
+  Qed.
+    (* Theorem homo2 (phi: Homomorphism): (f phi e) = e. *)
+  (* Proof. *)
+  (*   apply left_cancel with (Hsemi := Hsemi0) (Hmono := Hmono0) (x := (f phi e)). *)
+  (*   - apply Fsemi. *)
+  (*   - rewrite  <- (proof phi e). rewrite left_id. rewrite (@right_id F _ _ Fsemi). reflexivity. *)
+  (* Qed. *)
+
+  (* 134 *)
+  Theorem homomorphism_saves_inv: forall (x: G) (phi: Homomorphism) `{Hmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Hmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono}, (f phi (inv x)) = inv (f phi x).
+  Proof.
+    intros. apply (left_cancel_alt_proof F (f phi x)). rewrite <- (proof phi). rewrite right_inv. rewrite right_inv. apply homomorphism_saves_e. apply Fgroup.
+  Qed.
+
+  Definition Im_prop (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (y: F) := exists x: G, y = (f phi x).
+
+  Definition Im (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} := sig (Im_prop phi).
+
+  Definition Im_mult (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x y: (Im phi)): Im phi.
+  Proof.
+    exists (mult (proj1_sig x) (proj1_sig y)). unfold Im_prop. destruct x. destruct y. destruct i. destruct i0. simpl. exists (x1*x2). rewrite (proof phi). rewrite <- e0. rewrite <- e1. reflexivity.
+  Defined.
+
+  Theorem Im_mult_assoc: forall (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x y: (Im phi)) (x y z: Im phi), Im_mult phi x (Im_mult phi y z) = Im_mult phi (Im_mult phi x y) z.
+  Proof.
+    intros. unfold Im_mult. destruct x0. destruct y0. destruct z. simpl. destruct i. destruct i0. destruct i1. assert (Hproj1: x0 * (x1 * x2) = (x0 * x1 * x2)).
+    - apply assoc.
+    - match goal with |- ?L = ?R => set (name1 := L); set (name2 := R) end.
+      set (Q := @eq_sig F (Im_prop phi) name1 name2 Hproj1). apply Q. simpl. apply proof_irrelevance.
+  Qed.
+
+  Instance semigroupIm : Semigroup Im :=
+  {
+    mult := mult1;
+    assoc := assoc1
+  }.
+
+End Homomorphismus.
+
+(* 135. Пусть f1 : G → F и f2 : F → H — гомоморфизмы. *)
+(* Доказать, что f2 f1 : G → H — гомоморфизм. *)
+Theorem homomorphism_mult_homo: forall (G F H: Type) `{Gsemi: Semigroup G} `{Fsemi: Semigroup F} `{Hsemi: Semigroup H} (phi1: Homomorphism G F) (phi2: Homomorphism F H) (x y: G), (f F H phi2 (f G F phi1 (x*y))) = (f _ _ phi2 (f _ _ phi1 x)) * (f _ _ phi2 (f _ _ phi1 y)).
+Proof.
+  intros. rewrite (proof G F). rewrite (proof F H). reflexivity.
+Qed.
+
+Definition homomorphism_composition (G F H: Type) `{Gsemi: Semigroup G} `{Fsemi: Semigroup F} `{Hsemi: Semigroup H} (phi1: Homomorphism G F) (phi2: Homomorphism F H) := Build_homomorphism G H (fun x: G => (f F H phi2) (f G F phi1 x)) (homomorphism_mult_homo G F H phi1 phi2).
+(* Section Isomorphismus. *)
+
+  (* Record Isomorphism: Type := *)
+  (*   Build_isomorphism *)
+  (*   { *)
+  (*       phi: G1 -> G2; *)
+  (*       totality: forall (x: G1), exists (y: G2), phi x = y; *)
+  (*       injectivity: forall (x1 x2: G1), (phi x1) = (phi x2) -> x1 = x2; *)
+  (*       operation_preservation: forall (a b: G1), phi (a * b) = (phi a) * (phi b) *)
+  (*   }. *)
+
+(* End Isomorphismus. *)
+
+Theorem th01: forall (G F: Type) `{Hgr1: Semigroup G} `{Hgr2: Semigroup F} (phi: Isomorphism G F), forall (a b: F), (fun2 _ _ phi) (a * b) = ((fun2 _ _ phi) a) * ((fun2 _ _ phi) b).
+Proof.
+  intros. rewrite <- (right_left_id _ _ phi a). rewrite <- (right_left_id _ _ phi b). rewrite <- (proof G F (fun1 _ _ phi)). repeat rewrite (left_right_id _ _ phi). reflexivity.
+Qed.
+
+Theorem th1: forall (G F: Type) `{Hgr1: Semigroup G} `{Hgr2: Semigroup F} (phi: Isomorphism G F), Isomorphism F G.
+Proof.
+  intros. set (Homo2 := th01 G F phi). set (phi1 := phi). destruct phi. simpl in Homo2.
+  set (Homo1 := Build_homomorphism F G fun4 Homo2).
+  apply (Build_isomorphism F G Homo1 (f G F fun3)).
+  - apply (right_left_id G F phi1).
+  - apply (left_right_id G F phi1).
+Qed.
+
+(* Если группа изоморфна полугруппе, то полугруппа является группой *)
+   (* compose (phi1.(phi)) (psi.(phi)) =1 id). *)
+
+(* Print exist. *)
+(* Lemma l (r1 r2 : { R : nat -> nat -> bool | *)
+(*                    forall n, R n n = true }) : *)
+(*   (forall n1 n2, proj1_sig r1 n1 n2 = proj1_sig r2 n1 n2) -> *)
+(*   r1 = r2. *)
+(* Proof. *)
+(*   destruct r1 as [r1 H1], r2 as [r2 H2]. *)
+(*   simpl. *)
+(*   intros H. *)
+(*   assert (H': r1 = r2). *)
+(*   { apply functional_extensionality. *)
+(*     intros n1. *)
+(*     apply functional_extensionality. *)
+(*     intros n2. *)
+(*     apply H. } *)
+(*   subst r2. *)
+(*   rename r1 into r. *)
+(*   f_equal. *)
+(*   apply proof_irrelevance. *)
+(* Qed. *)
+
+(* Inductive bool: Set := *)
+(*   | true *)
+(*   | false. *)
+
+(* Lemma equality_commutes: *)
+(*   forall (a: bool) (b: bool), a = b -> b = a. *)
+(* Proof. *)
+(*   intros. *)
+(*   subst a. *)
+(*   reflexivity. *)
+(* Qed. *)
+
+Inductive megaeq: forall (A B: Type) (x: A) (y: B), Prop :=
+  megarefl A x : megaeq A A x x.
 
 Section generatedSubgroup.
   (* Пусть дано множество - носитель группы *)
@@ -574,5 +656,5 @@ Section CartesianGroupProduct.
   Proof.
     intros. unfold mult. simpl. unfold mulp. rewrite (@comm G _ _ _ Gab). rewrite (@comm H _ _ _ Hab). reflexivity.
   Qed.
-End
+End CartesianGroupProduct.
 Close Scope group_scope.
