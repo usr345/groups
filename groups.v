@@ -389,6 +389,17 @@ Section Subgroup.
   {
     comm := AbelianSubgroup_Abelian;
   }.
+
+  Definition Normal_subgroup (x y: G) (p: P x) := P (conjugation G x y).
+
+  (* Сопряжение - это изоморфизм группы в саму себя *)
+  (* 99 Докажите, что в коммутативной группе всякая подгруппа является нормальной подгруппой. *)
+
+  Theorem EveryAbelianSubgroup_normal: forall (x: sig P) (y: G), Normal_subgroup (proj1_sig x) y (proj2_sig x).
+  Proof.
+    intros x y. destruct x. simpl. unfold Normal_subgroup. unfold conjugation. rewrite comm. rewrite assoc. rewrite right_inv. rewrite left_id. apply p.
+  Qed.
+
 End Subgroup.
 
 Section Homomorphismus.
@@ -453,18 +464,112 @@ Section Homomorphismus.
     exists (mult (proj1_sig x) (proj1_sig y)). unfold Im_prop. destruct x. destruct y. destruct i. destruct i0. simpl. exists (x1*x2). rewrite (proof phi). rewrite <- e0. rewrite <- e1. reflexivity.
   Defined.
 
-  Theorem Im_mult_assoc: forall (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x y: (Im phi)) (x y z: Im phi), Im_mult phi x (Im_mult phi y z) = Im_mult phi (Im_mult phi x y) z.
+  Theorem Im_mult_assoc: forall (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x y z: Im phi), Im_mult phi x (Im_mult phi y z) = Im_mult phi (Im_mult phi x y) z.
   Proof.
-    intros. unfold Im_mult. destruct x0. destruct y0. destruct z. simpl. destruct i. destruct i0. destruct i1. assert (Hproj1: x0 * (x1 * x2) = (x0 * x1 * x2)).
+    intros phi Gmono Ggroup Fmono Fgroup x y z. unfold Im_mult. destruct x. destruct y. destruct z. simpl. destruct i. destruct i0. destruct i1. assert (Hproj1: x * (x0 * x1) = (x * x0 * x1)).
     - apply assoc.
     - match goal with |- ?L = ?R => set (name1 := L); set (name2 := R) end.
       set (Q := @eq_sig F (Im_prop phi) name1 name2 Hproj1). apply Q. simpl. apply proof_irrelevance.
   Qed.
 
-  Instance semigroupIm : Semigroup Im :=
+  Instance semigroupIm (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} : Semigroup (@Im phi Gmono Ggroup Fmono Fgroup) :=
   {
-    mult := mult1;
-    assoc := assoc1
+    mult := Im_mult phi;
+    assoc := Im_mult_assoc phi
+  }.
+
+  Definition Im_e (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} : Im phi.
+  Proof.
+    exists e. exists e. symmetry. apply homomorphism_saves_e. apply Fgroup.
+  Defined.
+
+  Theorem Im_mult_left_id: forall (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x: (Im phi)), Im_mult phi (Im_e phi) x = x.
+  Proof.
+    intros phi Gmono Ggroup Fmono Fgroup x. unfold Im_mult. destruct x as [x0 Px]. destruct Px. assert (H_left_id: e * x0 = x0).
+    - apply left_id.
+    - simpl. match goal with |- ?L = ?R => set (name1 := L); set (name2 := R) end. set (Q := @eq_sig F (Im_prop phi) name1 name2 H_left_id). apply Q. simpl. apply proof_irrelevance.
+  Qed.
+
+  Instance monoidIm (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} : Monoid (@Im phi Gmono Ggroup Fmono Fgroup) :=
+  {
+    e := Im_e phi;
+    left_id := Im_mult_left_id phi
+  }.
+
+  Definition Im_inv (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x: (Im phi)) : Im phi.
+  Proof.
+    destruct x as [y P]. exists (inv y). destruct P as [x H]. set(H_inv := homomorphism_saves_inv x). exists (inv x). rewrite H. symmetry. apply H_inv.
+  Defined.
+
+  Theorem Im_mult_left_inv: forall (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x: (Im phi)), Im_mult phi (Im_inv phi x) x = Im_e phi.
+  Proof.
+    intros phi Gmon Ggroup Fmono Fgroup x. unfold Im_mult. destruct x as [y P]. destruct P as [x Py]. simpl. assert (H_left_inv: inv y * y = e).
+    - apply left_inv.
+    - match goal with |- ?L = ?R => set (name1 := L); set (name2 := R) end. set (Q := @eq_sig F (Im_prop phi) name1 name2 H_left_inv). apply Q. apply proof_irrelevance.
+  Qed.
+
+  Instance groupIm (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} : Group (@Im phi Gmono Ggroup Fmono Fgroup) :=
+  {
+    inv := Im_inv phi;
+    left_inv := Im_mult_left_inv phi
+  }.
+
+  (* Ядро гомоморфизма *)
+  Definition Ker (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} := sig (fun x => (f phi x) = e).
+
+  Definition Ker_mult (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x y: Ker phi): Ker phi.
+  Proof.
+    destruct x as [x Px]. destruct y as [y Py]. exists (mult x y). rewrite (proof phi). rewrite Px. rewrite Py. rewrite left_id. reflexivity.
+  Defined.
+
+  Theorem Ker_mult_assoc: forall (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x y z: Ker phi), Ker_mult phi x (Ker_mult phi y z) = Ker_mult phi (Ker_mult phi x y) z.
+  Proof.
+    intros phi Gmono Ggroup Fmono Fgroup x y z. destruct x as [x Px]. destruct y as [y Py]. destruct z as [z Pz]. unfold Ker_mult.
+    assert (Hassoc: x * (y * z) = (x * y * z)).
+    - apply assoc.
+    - match goal with |- ?L = ?R => set (name1 := L); set (name2 := R) end. set (Q := @eq_sig G (fun x => (f phi x) = e) name1 name2 Hassoc). apply Q. unfold proj1_sig. unfold proj2_sig. simpl. apply proof_irrelevance.
+  Qed.
+
+  Instance semigroupKer (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} : Semigroup (@Ker phi Gmono Ggroup Fmono Fgroup) :=
+  {
+    mult := Ker_mult phi;
+    assoc := Ker_mult_assoc phi
+  }.
+
+  Definition Ker_e (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} : Ker phi.
+  Proof.
+    exists e. apply homomorphism_saves_e. apply Fgroup.
+  Defined.
+
+  Theorem Ker_mult_left_id: forall (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x: (Ker phi)), Ker_mult phi (Ker_e phi) x = x.
+  Proof.
+    intros phi Gmono Ggroup Fmono Fgroup x. destruct x as [x0 Px]. unfold Ker_mult. unfold Ker_e. assert (Hleft_id: e * x0 = x0).
+    - apply left_id.
+    - match goal with |- ?L = ?R => set (name1 := L); set (name2 := R) end. set (Q := @eq_sig G (fun x => (f phi x) = e) name1 name2 Hleft_id). apply Q. simpl. apply proof_irrelevance.
+  Qed.
+
+  Instance monoidKer (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} : Monoid (@Ker phi Gmono Ggroup Fmono Fgroup) :=
+  {
+    e := Ker_e phi;
+    left_id := Ker_mult_left_id phi
+  }.
+
+  Definition Ker_inv (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x: (Ker phi)): Ker phi.
+  Proof.
+    destruct x as [x P]. exists (inv x). rewrite (@homomorphism_saves_inv x phi Gmono Ggroup Fmono Fgroup). rewrite P. apply e_inv.
+  Defined.
+
+  Theorem Ker_mult_left_inv: forall (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} (x: (Ker phi)), Ker_mult phi (Ker_inv phi x) x = Ker_e phi.
+  Proof.
+    intros phi Gmono Ggroup Fmono Fgroup x. destruct x as [x0 Px]. unfold Ker_mult. unfold Ker_e. unfold Ker_inv. assert (Hinv: (inv x0) * x0 = e).
+    - apply left_inv.
+    - match goal with |- ?L = ?R => set (name1 := L); set (name2 := R) end. set (Q := @eq_sig G (fun x => (f phi x) = e) name1 name2 Hinv). apply Q. apply proof_irrelevance.
+  Qed.
+
+  Instance groupKer (phi: Homomorphism) `{Gmono: @Monoid G Gsemi} `{Ggroup: @Group G Gsemi Gmono} `{Fmono: @Monoid F Fsemi} `{Fgroup: @Group F Fsemi Fmono} : Group (@Ker phi Gmono Ggroup Fmono Fgroup) :=
+  {
+    inv := Ker_inv phi;
+    left_inv := Ker_mult_left_inv phi
   }.
 
 End Homomorphismus.
