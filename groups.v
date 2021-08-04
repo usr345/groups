@@ -661,22 +661,94 @@ Section generatedSubgroup.
           (fun x => (fst x, negb (snd x)))
           l).
 
+  Lemma inv_app (P: G -> Prop) (l1: list (id_or_inv P)) (l2: list (id_or_inv P)):
+      invert_list P (l1 ++ l2) = invert_list P l2 ++ invert_list P l1.
+  Proof.
+    destruct l1 as [| x t].
+    - unfold invert_list. simpl. rewrite app_nil_r. reflexivity.
+    - unfold invert_list. simpl. rewrite map_app. rewrite rev_app_distr. rewrite <- app_assoc. reflexivity.
+  Qed.
+
   Definition gfold (P1: G -> Prop) (l: list (id_or_inv P1)) :=
-    fold_left
-      mult
+    fold_right
+      mult e
       (map (fun (v: (sig P1) * bool) =>
               if snd v
               then (proj1_sig (fst v))
               else inv (proj1_sig (fst v)))
-           l) e.
+           l).
 
-  (* Порождающее множество группы G {\displaystyle G} G — это подмножество S {\displaystyle S} S в G {\displaystyle G} G, такое, что каждый элемент G {\displaystyle G} G может быть записан как произведение конечного числа элементов S {\displaystyle S} S и их обратных.  *)
+  (* Порождающее множество группы G — это подмножество S в G, такое, что каждый элемент G может быть записан как произведение конечного числа элементов S и их обратных.  *)
   Definition generatedSubgroup (P1: G -> Prop) :=
     sig (fun x =>
            @ex
              (list (id_or_inv P1))
              (fun l =>
                 (x = gfold P1 l))).
+
+
+  Theorem generatedSubgroup_mul: forall (P1: G -> Prop) (x y: list (id_or_inv P1)), gfold P1 (x ++ y) = gfold P1 x * gfold P1 y.
+  Proof.
+    intros. unfold gfold. induction x as [|x0 x].
+    - simpl. rewrite left_id. reflexivity.
+    - simpl. rewrite <- assoc. rewrite IHx. reflexivity.
+  Qed.
+
+  Lemma unapp L (x: L) (l: list L): x::l = (x::nil)++l.
+  Proof.
+    reflexivity.
+  Qed.
+
+  Lemma gfold_inv (P: G -> Prop) (l: list (id_or_inv P)): gfold P (invert_list P l) = inv (gfold P l).
+  Proof.
+    induction l as [|x t].
+    - unfold gfold. simpl. symmetry. apply e_inv.
+    - rewrite unapp. rewrite inv_app. rewrite generatedSubgroup_mul. rewrite generatedSubgroup_mul. rewrite inv_prod. rewrite IHt. unfold gfold. simpl.
+
+
+  Definition mult_gen (P1: G -> Prop) (x y: generatedSubgroup P1): generatedSubgroup P1.
+  Proof.
+    unfold generatedSubgroup. destruct x as [x0 Px]. destruct y as [y0 Py]. exists (x0 * y0). destruct Px as [list_x Px]. destruct Py as [list_y Py]. exists (list_x ++ list_y). symmetry. rewrite Px. rewrite Py. apply generatedSubgroup_mul.
+  Defined.
+
+  Theorem generatedSubgroup_assoc: forall (P1: G -> Prop) (x y z: generatedSubgroup P1), mult_gen P1 x (mult_gen P1 y z) = mult_gen P1 (mult_gen P1 x y) z.
+  Proof.
+    intros. assert (Hproj1: proj1_sig (mult_gen P1 x (mult_gen P1 y z)) = proj1_sig (mult_gen P1 (mult_gen P1 x y) z)).
+    - destruct x as [x Px]. destruct y as [y Py]. destruct z as [z Pz]. unfold mult_gen. simpl.
+      rewrite assoc. reflexivity.
+    - destruct x as [x Px]. destruct y as [y Py]. destruct z as [z Pz]. unfold mult_gen. simpl.
+      match goal with |- ?L = ?R => set (name1 := L); set (name2 := R) end. set (Q := @eq_sig G _ name1 name2 Hproj1). apply Q. simpl. apply proof_irrelevance. (* unfold eq_rect. destruct Px as [x0 Px]. destruct Py as [y0 Py]. destruct Pz as [z0 Pz]. subst. simpl. unfold eq_sym. unfold eq_ind_r. unfold eq_ind. simpl. assert (Hassoc: x0 ++ y0 ++ z0 = (x0 ++ y0) ++ z0). *)
+      (* + apply app_assoc. *)
+      (* + match goal with |- ?L = ?R => set (name3 := L); set (name4 := R) end. set (Q := @eq_sig (list (id_or_inv P1)) _ name3 name4 Hassoc). *)
+  Qed.
+
+  Instance semigroupGeneratedSubgroup (P1: G -> Prop) : Semigroup (generatedSubgroup P1) :=
+  {
+    mult := mult_gen P1;
+    assoc := generatedSubgroup_assoc P1
+  }.
+
+  Definition e_gen (P1: G -> Prop): generatedSubgroup P1.
+  Proof.
+    unfold generatedSubgroup. exists e. exists nil. unfold gfold. simpl. reflexivity.
+  Defined.
+
+  Theorem generatedSubgroup_left_id: forall (P1: G -> Prop) (x: generatedSubgroup P1), mult_gen P1 (e_gen P1) x = x.
+  Proof.
+    intros. destruct x as [x Px]. unfold e_gen. simpl. unfold mult_gen. simpl. match goal with |- ?L = ?R => set (name1 := L); set (name2 := R) end. set (Q := @eq_sig G _ name1 name2 (left_id x)). apply Q. simpl. apply proof_irrelevance.
+Qed.
+
+  Instance monoidGeneratedSubgroup (P1: G -> Prop) : Monoid (generatedSubgroup P1) :=
+  {
+    e := e_gen P1;
+    left_id := generatedSubgroup_left_id P1
+  }.
+
+  Definition inv_gen (P1: G -> Prop) (x: generatedSubgroup P1): generatedSubgroup P1.
+  Proof.
+    unfold generatedSubgroup. destruct x as [x Px]. exists (inv x). unfold gfold. destruct Px as [l0 Px]. simpl. reflexivity.
+  Defined.
+
 
   (* Definition commutant := { x : G | exists l: list (G*G), x = fold (fun p a => mult1 (commutator (fst p) (snd p)) a) e l }. *)
 End generatedSubgroup.
