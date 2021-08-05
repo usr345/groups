@@ -703,7 +703,10 @@ Section generatedSubgroup.
   Proof.
     induction l as [|x t].
     - unfold gfold. simpl. symmetry. apply e_inv.
-    - rewrite unapp. rewrite inv_app. rewrite generatedSubgroup_mul. rewrite generatedSubgroup_mul. rewrite inv_prod. rewrite IHt. unfold gfold. simpl.
+    - rewrite unapp. rewrite inv_app. rewrite generatedSubgroup_mul. rewrite generatedSubgroup_mul. rewrite inv_prod. rewrite IHt. unfold gfold. simpl. destruct (snd x).
+      +  simpl. repeat rewrite right_id. reflexivity. apply Hgr. apply Hgr.
+      + simpl. repeat rewrite right_id. rewrite inv_involution. reflexivity. apply Hgr. apply Hgr.
+  Qed.
 
 
   Definition mult_gen (P1: G -> Prop) (x y: generatedSubgroup P1): generatedSubgroup P1.
